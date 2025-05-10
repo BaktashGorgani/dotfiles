@@ -1,0 +1,7 @@
+vim.keymap.set("n", "<leader>cce", "<cmd>CopilotChatExplain<cr>")
+vim.keymap.set("n", "<leader>ccr", "<cmd>CopilotChatReview<cr>")
+vim.keymap.set("n", "<leader>ccf", "<cmd>CopilotChatFix<cr>")
+vim.keymap.set("n", "<leader>cco", "<cmd>CopilotChatOptimize<cr>")
+vim.keymap.set("n", "<leader>ccd", "<cmd>CopilotChatDocs<cr>")
+vim.keymap.set("n", "<leader>cct", "<cmd>CopilotChatTests<cr>")
+vim.keymap.set("n", "<leader>ccm", "<cmd>CopilotChatCommit<cr>")
