@@ -1,0 +1,40 @@
+
+@theme "/usr/share/rofi/themes/arthur.rasi"
+
+configuration {
+    sort: true;
+    sorting-method: "fzf";
+    matching: "fuzzy";
+}
+
+message {
+    font: "Source Code Pro 15";
+}
+
+inputbar {
+    font: "Source Code Pro 15";
+}
+
+entry {
+    font: "Source Code Pro 15";
+}
+
+prompt {
+    font: "Source Code Pro 15";
+}
+
+case-indicator {
+    font: "Source Code Pro 15";
+}
+
+listview {
+    font: "Source Code Pro 15";
+}
+
+element {
+    font: "Source Code Pro 15";
+}
+
+element-text {
+    font: "Source Code Pro 15";
+}
