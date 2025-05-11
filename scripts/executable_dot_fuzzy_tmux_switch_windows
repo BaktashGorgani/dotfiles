@@ -1,7 +1,8 @@
 #!/bin/bash
 
 tmux_switch_window () {
-    local windowName=$(
+    local windowName
+    windowName=$(
         tmux list-windows -F "#{window_index} #{window_name}" |
         sed "/.*SWITCH/d" |
         fzf -i --ansi --prompt="Switch to window: " --preview="echo {} | awk '{ print \$1 }' | xargs -I {} tmux capture-pane -p -t{}.1"
@@ -10,7 +11,7 @@ tmux_switch_window () {
         echo "No window selected"
         return 1
     fi
-    windowIndex=$(echo "$windowName" | awk '{print $1}')
+    windowIndex=$(awk '{print $1}' <<< "$windowName")
     tmux select-window -t "$windowIndex"
 }
 
