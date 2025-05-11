@@ -306,7 +306,6 @@ GPG_TTY=$(tty)
 export GPG_TTY
 
 if [[ -n "$TMUX" ]]; then
-    fjs
     if ! fjs; then
         read -n 1 -s -r -p "Press any key to continue"
     fi
