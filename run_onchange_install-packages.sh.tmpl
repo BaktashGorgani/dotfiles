@@ -1,142 +1,39 @@
 #!/bin/sh
-
-echo "Installing packages..."
 {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-$ZYPPER_NON_INTERACTIVE install aaa_base-extras
-$ZYPPER_NON_INTERACTIVE install aaa_base-wsl
-$ZYPPER_NON_INTERACTIVE install bash-completion
-$ZYPPER_NON_INTERACTIVE install bat
-$ZYPPER_NON_INTERACTIVE install bind-utils
-$ZYPPER_NON_INTERACTIVE install bzip2
-$ZYPPER_NON_INTERACTIVE install ca-certificates
-$ZYPPER_NON_INTERACTIVE install ca-certificates-mozilla
-$ZYPPER_NON_INTERACTIVE install chezmoi
-$ZYPPER_NON_INTERACTIVE install cnf
-$ZYPPER_NON_INTERACTIVE install dos2unix
-$ZYPPER_NON_INTERACTIVE install filesystem
-$ZYPPER_NON_INTERACTIVE install fzf
-$ZYPPER_NON_INTERACTIVE install gcc
-$ZYPPER_NON_INTERACTIVE install gh
-$ZYPPER_NON_INTERACTIVE install git
-$ZYPPER_NON_INTERACTIVE install glibc
-$ZYPPER_NON_INTERACTIVE install gopls
-$ZYPPER_NON_INTERACTIVE install gum
-$ZYPPER_NON_INTERACTIVE install gum-bash-completion
-$ZYPPER_NON_INTERACTIVE install iputils
-$ZYPPER_NON_INTERACTIVE install joe
-$ZYPPER_NON_INTERACTIVE install less
-$ZYPPER_NON_INTERACTIVE install libyui-ncurses-pkg16
-$ZYPPER_NON_INTERACTIVE install lsof
-$ZYPPER_NON_INTERACTIVE install lua-language-server
-$ZYPPER_NON_INTERACTIVE install make
-$ZYPPER_NON_INTERACTIVE install man
-$ZYPPER_NON_INTERACTIVE install neovim
-$ZYPPER_NON_INTERACTIVE install openssh
-$ZYPPER_NON_INTERACTIVE install openSUSE-build-key
-$ZYPPER_NON_INTERACTIVE install openSUSE-release
-$ZYPPER_NON_INTERACTIVE install openSUSE-release-appliance-wsl
-$ZYPPER_NON_INTERACTIVE install pam-config
-$ZYPPER_NON_INTERACTIVE install patterns-base-minimal_base
-$ZYPPER_NON_INTERACTIVE install procps
-$ZYPPER_NON_INTERACTIVE install python311
-$ZYPPER_NON_INTERACTIVE install python311-neovim
-$ZYPPER_NON_INTERACTIVE install python311-pip
-$ZYPPER_NON_INTERACTIVE install python311-pipx
-$ZYPPER_NON_INTERACTIVE install ripgrep
-$ZYPPER_NON_INTERACTIVE install rpm
-$ZYPPER_NON_INTERACTIVE install screen
-$ZYPPER_NON_INTERACTIVE install sshpass
-$ZYPPER_NON_INTERACTIVE install sudo
-$ZYPPER_NON_INTERACTIVE install system-user-nobody
-$ZYPPER_NON_INTERACTIVE install tcpdump
-$ZYPPER_NON_INTERACTIVE install terminfo
-$ZYPPER_NON_INTERACTIVE install timezone
-$ZYPPER_NON_INTERACTIVE install tmux
-$ZYPPER_NON_INTERACTIVE install traceroute
-$ZYPPER_NON_INTERACTIVE install tree
-$ZYPPER_NON_INTERACTIVE install vim
-$ZYPPER_NON_INTERACTIVE install vim-data
-$ZYPPER_NON_INTERACTIVE install wget
-$ZYPPER_NON_INTERACTIVE install yast2-firstboot
-$ZYPPER_NON_INTERACTIVE install yast2-firstboot-wsl
-$ZYPPER_NON_INTERACTIVE install yast2-packager
-$ZYPPER_NON_INTERACTIVE install zip
-$ZYPPER_NON_INTERACTIVE install zsh
-$ZYPPER_NON_INTERACTIVE install zypper
-$ZYPPER_NON_INTERACTIVE install aaa_base-extras
-$ZYPPER_NON_INTERACTIVE install aaa_base-wsl
-$ZYPPER_NON_INTERACTIVE install bash-completion
-$ZYPPER_NON_INTERACTIVE install bat
-$ZYPPER_NON_INTERACTIVE install bind-utils
-$ZYPPER_NON_INTERACTIVE install bzip2
-$ZYPPER_NON_INTERACTIVE install ca-certificates
-$ZYPPER_NON_INTERACTIVE install ca-certificates-mozilla
-$ZYPPER_NON_INTERACTIVE install chezmoi
-$ZYPPER_NON_INTERACTIVE install cnf
-$ZYPPER_NON_INTERACTIVE install dos2unix
-$ZYPPER_NON_INTERACTIVE install filesystem
-$ZYPPER_NON_INTERACTIVE install fzf
-$ZYPPER_NON_INTERACTIVE install gcc
-$ZYPPER_NON_INTERACTIVE install gh
-$ZYPPER_NON_INTERACTIVE install git
-$ZYPPER_NON_INTERACTIVE install glibc
-$ZYPPER_NON_INTERACTIVE install gopls
-$ZYPPER_NON_INTERACTIVE install gum
-$ZYPPER_NON_INTERACTIVE install gum-bash-completion
-$ZYPPER_NON_INTERACTIVE install iputils
-$ZYPPER_NON_INTERACTIVE install joe
-$ZYPPER_NON_INTERACTIVE install less
-$ZYPPER_NON_INTERACTIVE install libyui-ncurses-pkg16
-$ZYPPER_NON_INTERACTIVE install lsof
-$ZYPPER_NON_INTERACTIVE install lua-language-server
-$ZYPPER_NON_INTERACTIVE install make
-$ZYPPER_NON_INTERACTIVE install man
-$ZYPPER_NON_INTERACTIVE install neovim
-$ZYPPER_NON_INTERACTIVE install openssh
-$ZYPPER_NON_INTERACTIVE install openSUSE-build-key
-$ZYPPER_NON_INTERACTIVE install openSUSE-release
-$ZYPPER_NON_INTERACTIVE install openSUSE-release-appliance-wsl
-$ZYPPER_NON_INTERACTIVE install pam-config
-$ZYPPER_NON_INTERACTIVE install patterns-base-minimal_base
-$ZYPPER_NON_INTERACTIVE install procps
-$ZYPPER_NON_INTERACTIVE install python311
-$ZYPPER_NON_INTERACTIVE install python311-neovim
-$ZYPPER_NON_INTERACTIVE install python311-pip
-$ZYPPER_NON_INTERACTIVE install python311-pipx
-$ZYPPER_NON_INTERACTIVE install ripgrep
-$ZYPPER_NON_INTERACTIVE install rpm
-$ZYPPER_NON_INTERACTIVE install screen
-$ZYPPER_NON_INTERACTIVE install sshpass
-$ZYPPER_NON_INTERACTIVE install sudo
-$ZYPPER_NON_INTERACTIVE install system-user-nobody
-$ZYPPER_NON_INTERACTIVE install tcpdump
-$ZYPPER_NON_INTERACTIVE install terminfo
-$ZYPPER_NON_INTERACTIVE install timezone
-$ZYPPER_NON_INTERACTIVE install tmux
-$ZYPPER_NON_INTERACTIVE install traceroute
-$ZYPPER_NON_INTERACTIVE install tree
-$ZYPPER_NON_INTERACTIVE install vim
-$ZYPPER_NON_INTERACTIVE install vim-data
-$ZYPPER_NON_INTERACTIVE install wget
-$ZYPPER_NON_INTERACTIVE install yast2-firstboot
-$ZYPPER_NON_INTERACTIVE install yast2-firstboot-wsl
-$ZYPPER_NON_INTERACTIVE install yast2-packager
-$ZYPPER_NON_INTERACTIVE install zip
-$ZYPPER_NON_INTERACTIVE install zsh
-$ZYPPER_NON_INTERACTIVE install zypper
-echo "Packages installed!"
+printf "\nInstalling zypper packages...\n"
 
-echo "Updating packages..."
+ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
+$ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
+
+printf "\nZypper packages installed!\n"
+
+printf "\nUpdating Zypper packages...\n"
+
 $ZYPPER_NON_INTERACTIVE update
-echo "Packages updated!"
+
+printf "\nZypper packages updated!\n"
 {{ end }}
-echo "Checking for Homebrew..."
+printf "\nChecking for Homebrew...\n"
+
 if command -v brew &> /dev/null
 then
-    echo "Homebrew already installed"
+    printf "\nHomebrew already installed\n"
 else
-    echo "Installing Homebrew"
+    printf "\nInstalling Homebrew\n"
+
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    echo "Homebrew installed"
+
+    printf "\nHomebrew installed!\n"
 fi
+
+printf "\nInstalling Homebrew packages...\n"
+
+brew install {{ range .packages.wsl_opensuse_tumbleweed.brews }}{{ . | quote }} {{ end }}
+
+printf "\nHomebrew packages installed!\n"
+
+printf "\nUpdating Homebrew packages...\n"
+
+brew update
+
+printf "\nHomebrew packages updated!\n"
