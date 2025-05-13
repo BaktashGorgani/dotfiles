@@ -3,11 +3,6 @@ is_git_repo () {
 }
 
 frg () {
-  if ! is_git_repo; then
-    echo "Not a git repository"
-    return 1
-  fi
-
     rm -f /tmp/rg-fzf-{r,f}
     RG_PREFIX="rg --column --line-number --no-heading --color=always --smart-case "
     INITIAL_QUERY="${*:-}"

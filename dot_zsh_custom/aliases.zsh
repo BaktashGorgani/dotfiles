@@ -1,6 +1,6 @@
 alias profile='exec zsh'
 alias zshrc='nvim ~/.zshrc'
-alias zsh-custom='nvim ~/.oh-my-zsh/custom'
+alias zsh-custom='nvim ~/.zsh_custom'
 alias origin='git push origin main'
 alias live='git push live main'
 alias sas='cd ~/Git/SASN_Admin && activate'

@@ -12,6 +12,30 @@ printf "\nUpdating Zypper packages...\n"
 $ZYPPER_NON_INTERACTIVE update
 
 printf "\nZypper packages updated!\n"
+{{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+printf "\nInstalling dnf packages...\n"
+
+sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
+
+printf "\nDnf packages installed!\n"
+
+printf "\nUpdating dnf packages...\n"
+
+sudo dnf update -y
+
+printf "\nDnf packages updated!\n"
+
+printf "\nInstalling flatpak packages...\n"
+
+flatpak install -y {{ range .packages.fedora.home.flatpaks }}{{ . | quote }} {{ end }}
+
+printf "\nFlatpak packages installed!\n"
+
+printf "\nUpdating flatpak packages...\n"
+
+flatpak update -y
+
+printf "\nFlatpak packages updated!\n"
 {{ end }}
 printf "\nChecking for Homebrew...\n"
 
@@ -28,7 +52,7 @@ fi
 
 printf "\nInstalling Homebrew packages...\n"
 
-brew install {{ range .packages.wsl_opensuse_tumbleweed.brews }}{{ . | quote }} {{ end }}
+brew install {{ range .packages.brews }}{{ . | quote }} {{ end }}
 
 printf "\nHomebrew packages installed!\n"
 
