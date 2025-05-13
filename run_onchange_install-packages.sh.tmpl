@@ -1,4 +1,6 @@
 #!/bin/sh
+
+echo "Installing packages..."
 {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
 ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
 $ZYPPER_NON_INTERACTIVE install aaa_base-extras
@@ -123,6 +125,18 @@ $ZYPPER_NON_INTERACTIVE install yast2-packager
 $ZYPPER_NON_INTERACTIVE install zip
 $ZYPPER_NON_INTERACTIVE install zsh
 $ZYPPER_NON_INTERACTIVE install zypper
+echo "Packages installed!"
 
+echo "Updating packages..."
 $ZYPPER_NON_INTERACTIVE update
-{{ end -}}
+echo "Packages updated!"
+{{ end }}
+echo "Checking for Homebrew..."
+if command -v brew &> /dev/null
+then
+    echo "Homebrew already installed"
+else
+    echo "Installing Homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    echo "Homebrew installed"
+fi
