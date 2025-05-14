@@ -1,63 +1,83 @@
 #!/bin/sh
+# vim: filetype=sh
+function log() {
+    printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
+}
+
+log "\nBEGIN INSTALL SCRIPT\n"
+
 {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-printf "\nInstalling zypper packages...\n"
+    log "Installing zypper packages..."
 
-ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-$ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
+    ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
+    $ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
 
-printf "\nZypper packages installed!\n"
+    log "Zypper packages installed!"
 
-printf "\nUpdating Zypper packages...\n"
+    log "Updating zypper packages..."
 
-$ZYPPER_NON_INTERACTIVE update
+    $ZYPPER_NON_INTERACTIVE update
 
-printf "\nZypper packages updated!\n"
+    log "Zypper packages updated!"
 {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
-printf "\nInstalling dnf packages...\n"
+    log "Installing dnf packages..."
 
-sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
+    sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
 
-printf "\nDnf packages installed!\n"
+    log "Dnf packages installed!"
 
-printf "\nUpdating dnf packages...\n"
+    log "Updating dnf packages..."
 
-sudo dnf update -y
+    sudo dnf update -y
 
-printf "\nDnf packages updated!\n"
+    log "Dnf packages updated!"
 
-printf "\nInstalling flatpak packages...\n"
+    log "Installing flatpak packages..."
+    {{ range .packages.fedora.home.flatpaks }}
+        if ! flatpak info {{ . }} &> /dev/null; then
+            printf "\nInstalling {{ . }}...\n"
+            flatpak install -y {{ . }}
+        else
+            printf "\n{{ . }} already installed\n"
+        fi
+    {{ end }}
+    echo
+    log "Flatpak packages installed!"
 
-flatpak install -y {{ range .packages.fedora.home.flatpaks }}{{ . | quote }} {{ end }}
+    log "Updating flatpak packages..."
 
-printf "\nFlatpak packages installed!\n"
+    flatpak update -y
 
-printf "\nUpdating flatpak packages...\n"
-
-flatpak update -y
-
-printf "\nFlatpak packages updated!\n"
+    log "Flatpak packages updated!"
 {{ end }}
-printf "\nChecking for Homebrew...\n"
+log "Checking for Homebrew..."
 
-if command -v brew &> /dev/null
-then
-    printf "\nHomebrew already installed\n"
+if command -v brew &> /dev/null; then
+    log "Homebrew already installed"
 else
-    printf "\nInstalling Homebrew\n"
+    log "Homebrew not found, installing..."
 
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    printf "\nHomebrew installed!\n"
+    log "Homebrew installed!"
 fi
 
-printf "\nInstalling Homebrew packages...\n"
+log "Installing Homebrew packages..."
+{{ range .packages.brews }}
+    if ! brew list {{ . }} &> /dev/null; then
+        printf "\nInstalling {{ . }}...\n"
+        brew install {{ . }}
+    else
+        printf "\n{{ . }} already installed\n"
+    fi
+{{ end }}
+echo
+log "Homebrew packages installed!"
 
-brew install {{ range .packages.brews }}{{ . | quote }} {{ end }}
-
-printf "\nHomebrew packages installed!\n"
-
-printf "\nUpdating Homebrew packages...\n"
+log "Updating Homebrew packages..."
 
 brew update
 
-printf "\nHomebrew packages updated!\n"
+log "Homebrew packages updated!"
+
+log "\nEND INSTALL SCRIPT\n"
