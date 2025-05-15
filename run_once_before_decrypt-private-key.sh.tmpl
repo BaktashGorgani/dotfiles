@@ -1,7 +1,8 @@
 #!/bin/sh
+# vim: filetype=sh
 
-if [ ! -f "/home/baky/.config/chezmoi/key.txt" ]; then
-    mkdir -p "/home/baky/.config/chezmoi"
-    chezmoi age decrypt --output "/home/baky/.config/chezmoi/key.txt" --passphrase "{{ .chezmoi.sourceDir }}/key.txt.age"
-    chmod 600 "/home/baky/.config/chezmoi/key.txt"
+if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
+    mkdir -p "$HOME/.config/chezmoi"
+    chezmoi age decrypt --output "$HOME/.config/chezmoi/key.txt" --passphrase "{{ .chezmoi.sourceDir }}/key.txt.age"
+    chmod 600 "$HOME/.config/chezmoi/key.txt"
 fi
