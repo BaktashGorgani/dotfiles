@@ -1,0 +1,8 @@
+encryption = "age"
+[age]
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age1u05rrqsft0lj9rvz40rrc4aflmt493fhelgqxhpu943gs6npng3q28tarf"
+
+[diff]
+    command = "nvim"
+    args = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
