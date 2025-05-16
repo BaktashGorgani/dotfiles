@@ -1,3 +1,4 @@
+# vim: filetype=zsh
 export EDITOR=nvim
 export VISUAL=nvim
 export SUDO_EDITOR=nvim
@@ -16,3 +17,6 @@ fi
 # Fix for tmux on WSL2 OpenSuse Tumbleweed
 export TMUX_TMPDIR='/tmp'
 {{ end -}}
+
+export MANPAGER="sh -c 'sed -u -e \"s/\\x1B\[[0-9;]*m//g; s/.\\x08//g\" | bat -p -lman'"
+export LESSUTFCHARDEF=E000-F8FF:p,F0000-FFFFD:p,100000-10FFFD:p
