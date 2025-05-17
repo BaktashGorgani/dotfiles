@@ -80,4 +80,21 @@ brew update
 
 log "Homebrew packages updated!"
 
+log "Installing TPM plugins"
+{{ range .packages.tpms }}
+    if [[ ! -d "$HOME/.tmux/plugins/{{ . }}" ]]; then
+        printf "\nA plugin is missing. Attempting to reinstall all plugins...\n"
+        $HOME/.tmux/plugins/tpm/bin/install_plugins
+    else
+        printf "\n{{ . }} already installed\n"
+    fi
+{{ end }}
+log "TPM plugins installed!"
+
+log "Updating TPM Plugins"
+
+$HOME/.tmux/plugins/tpm/bin/update_plugins all
+
+log "TPM plugins updated!"
+
 log "\nEND INSTALL SCRIPT\n"
