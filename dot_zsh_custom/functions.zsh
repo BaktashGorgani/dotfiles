@@ -101,3 +101,9 @@ get_file () {
 performance () {
     echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 }
+
+scrollback() {
+  scrollback_file=$(mktemp)
+  tmux capture-pane -pS - > "$scrollback_file"
+  nvim '+call delete(@%)' "$scrollback_file"
+}
