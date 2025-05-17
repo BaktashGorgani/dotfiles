@@ -1,4 +1,6 @@
 packages:
+  cargos:
+    - 'eza'
   brews:
     - 'jandedobbeleer/oh-my-posh/oh-my-posh'
   tpms:

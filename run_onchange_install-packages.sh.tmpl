@@ -80,7 +80,7 @@ brew update
 
 log "Homebrew packages updated!"
 
-log "Installing TPM plugins"
+log "Installing TPM plugins..."
 {{ range .packages.tpms }}
     if [[ ! -d "$HOME/.tmux/plugins/{{ . }}" ]]; then
         printf "\nA plugin is missing. Attempting to reinstall all plugins...\n"
@@ -91,10 +91,34 @@ log "Installing TPM plugins"
 {{ end }}
 log "TPM plugins installed!"
 
-log "Updating TPM Plugins"
+log "Updating TPM Plugins..."
 
 $HOME/.tmux/plugins/tpm/bin/update_plugins all
 
 log "TPM plugins updated!"
+
+log "Checking for Rust..."
+
+if command -v rustup &> /dev/null; then
+    log "Rust already installed"
+else
+    log "Rust not found, installing..."
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+    log "Rust installed!"
+fi
+
+log "Updating Rust..."
+
+rustup update
+
+log "Rust Updated"
+
+log "Installing Rust packages..."
+
+cargo install {{ range .packages.cargos }}{{ . | quote }} {{ end }}
+
+log "Rust packages installed!"
 
 log "\nEND INSTALL SCRIPT\n"

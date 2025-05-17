@@ -26,7 +26,6 @@ alias pgl="git log --color=always --abbrev-commit --decorate --format=format:'%C
 alias pggl="pgl --graph"
 alias disks="gdu -d"
 
-# Custom Aliases and secrets
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
@@ -47,3 +46,7 @@ fi
 alias ll='ls -alh'
 alias la='ls -A'
 alias l='ls -CF'
+
+# eza
+alias ez='eza -l --icons=always --color=always --hyperlink --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
+alias ezt='ez -T'
