@@ -17,6 +17,11 @@
     url = "https://github.com/catppuccin/tmux/archive/refs/tags/v2.1.3.tar.gz"
     refreshPeriod = "168h"
 
+[".zsh_custom/plugins/fzf-tab"]
+    type = "git-repo"
+    url =  "https://github.com/Aloxaf/fzf-tab"
+    refreshPeriod = "168h"
+
 [".config/nvim"]
     type = "git-repo"
     url = "https://github.com/BaktashGorgani/nvim-config.git"
