@@ -1,6 +1,11 @@
 packages:
   brews:
     - 'jandedobbeleer/oh-my-posh/oh-my-posh'
+  tpms:
+    - 'tmux-sensible'
+    - 'tmux-yank'
+    - 'tmux-resurrect'
+    - 'tmux-continuum'
   wsl_opensuse_tumbleweed:
     zyppers:
       - 'aaa_base-extras'
