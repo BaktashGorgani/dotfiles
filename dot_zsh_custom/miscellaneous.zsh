@@ -7,3 +7,6 @@ eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/night-ow
 
 # chezmoi completion
 eval "$(chezmoi completion zsh)"
+
+# enable zoxide
+eval "$(zoxide init zsh)"
