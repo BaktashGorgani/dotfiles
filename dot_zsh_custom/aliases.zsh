@@ -50,3 +50,6 @@ alias l='ls -CF'
 # eza
 alias ez='eza -l --icons=always --color=always --hyperlink --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
 alias ezt='ez -T'
+
+# load new wallpapers
+alias wallpaper='$HOME/git/bing_wallpaper/bing_wallpaper_optimized'
