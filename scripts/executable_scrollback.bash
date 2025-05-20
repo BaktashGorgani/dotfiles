@@ -1,5 +1,5 @@
 #!/bin/bash
 
 scrollback_file=$(mktemp)
-tmux capture-pane -pS - > "$scrollback_file"
+tmux capture-pane -JpS - > "$scrollback_file"
 nvim '+call delete(@%)' "$scrollback_file"
