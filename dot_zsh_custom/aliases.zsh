@@ -53,3 +53,4 @@ alias ezt='ez -T'
 
 # load new wallpapers
 alias wallpaper='$HOME/git/bing_wallpaper/bing_wallpaper_optimized'
+alias lg='lazygit'
