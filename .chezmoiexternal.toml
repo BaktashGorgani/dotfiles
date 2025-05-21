@@ -5,6 +5,11 @@
     stripComponents = 1
     refreshPeriod = "168h"
 
+[".tmux/plugins/tmux-nerd-font-window-name"]
+    type = "git-repo"
+    url = "https://github.com/joshmedeski/tmux-nerd-font-window-name"
+    refreshPeriod = "168h"
+
 [".tmux/plugins/tpm"]
     type = "git-repo"
     url = "https://github.com/tmux-plugins/tpm"

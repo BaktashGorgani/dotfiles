@@ -3,11 +3,13 @@ packages:
     - 'eza'
   brews:
     - 'jandedobbeleer/oh-my-posh/oh-my-posh'
+    - 'jesseduffield/lazygit/lazygit'
   tpms:
     - 'tmux-sensible'
     - 'tmux-yank'
     - 'tmux-resurrect'
     - 'tmux-continuum'
+    - 'tmux-floax'
   wsl_opensuse_tumbleweed:
     zyppers:
       - 'aaa_base-extras'
