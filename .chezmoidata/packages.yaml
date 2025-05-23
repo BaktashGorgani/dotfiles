@@ -71,6 +71,7 @@ packages:
       - 'yast2-firstboot'
       - 'yast2-firstboot-wsl'
       - 'yast2-packager'
+      - 'yq'
       - 'zip'
       - 'zsh'
   fedora:
@@ -505,6 +506,7 @@ packages:
         - 'xlsclients'
         - 'xorg-x11-drv-nvidia-cuda'
         - 'xorg-x11-server-Xwayland'
+        - 'yq'
         - 'zip'
         - 'zram-generator-defaults'
         - 'zsh'

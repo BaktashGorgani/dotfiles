@@ -124,6 +124,8 @@ jump_ssh () {
     local stripCvSuffix=${connectName%"$cvSuffix"}
     local alticeSuffix=".alticeusa.net"
     local connectName=${stripCvSuffix%"$alticeSuffix"}
+    local newWindow="tmux set-option history-limit 100000; new-window"
+
     if [[ $jumpServer =~ "Direct" ]]; then
         echo "Connecting directly to $connectName"
     elif [[ "$connectName" == "$connectIp" ]]; then
@@ -146,9 +148,9 @@ jump_ssh () {
         local pass
         pass=$(gpg -d -q "$HOME/.connections/$connectName.passwd.gpg")
         if [[ -n "$TMUX" ]]; then
-            cmd="tmux new-window -n $windowName 'sshpass -p $pass ssh -t bgorgani@$connectName;while true;do sleep 1;done'"
+            cmd="$newWindow -n $windowName 'sshpass -p $pass ssh -t bgorgani@$connectName;while true;do sleep 1;done'"
             if ! "$cmd"; then
-                tmux new-window -n "$windowName" "ssh -t bgorgani@$connectName;while true;do sleep 1;done"
+                "$newWindow" -n "$windowName" "ssh -t bgorgani@$connectName;while true;do sleep 1;done"
             fi
         else
             cmd="sshpass -p $pass ssh -t bgorgani@$connectName"
@@ -162,9 +164,9 @@ jump_ssh () {
         jumpPass=$(gpg -d -q "$HOME/.connections/$jumpServer.passwd.gpg")
         tacacsPass=$(gpg -d -q "$HOME/.connections/tacacs.passwd.gpg")
         if [[ -n "$TMUX" ]]; then
-            cmd="tmux new-window -n $windowName 'sshpass -p $jumpPass ssh -t bgorgani@$jumpServer \"sshpass -p $tacacsPass ssh bgorgani@$connectName\";while true;do sleep 1;done'"
+            cmd="$newWindow -n $windowName 'sshpass -p $jumpPass ssh -t bgorgani@$jumpServer \"sshpass -p $tacacsPass ssh bgorgani@$connectName\";while true;do sleep 1;done'"
             if ! "$cmd"; then
-                tmux new-window -n "$windowName" "sshpass -p $jumpPass ssh -t bgorgani@$jumpServer \"ssh bgorgani@$connectName\";while true;do sleep 1;done"
+                "$newWindow" -n "$windowName" "sshpass -p $jumpPass ssh -t bgorgani@$jumpServer \"ssh bgorgani@$connectName\";while true;do sleep 1;done"
             fi
         else
             cmd="sshpass -p $jumpPass ssh -t bgorgani@$jumpServer \"sshpass -p $tacacsPass ssh bgorgani@$connectName\""
