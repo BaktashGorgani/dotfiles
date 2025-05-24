@@ -9,4 +9,4 @@ eval "$(oh-my-posh init zsh --config $(brew --prefix oh-my-posh)/themes/night-ow
 eval "$(chezmoi completion zsh)"
 
 # enable zoxide
-eval "$(zoxide init zsh)"
+eval "$(zoxide init --cmd cd zsh)"
