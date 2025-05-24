@@ -10,3 +10,4 @@ eval "$(chezmoi completion zsh)"
 
 # enable zoxide
 eval "$(zoxide init --cmd cd zsh)"
+eval "$(zoxide init zsh)"
