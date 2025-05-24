@@ -118,7 +118,7 @@
     },
 
     "clock": {
-        "format": "{:%I:%M %p 󰃭 %m·%d·%y}",
+        "format": "{:%I:%M %p 󰃭  %A, %b %d %Y}",
         "rotate": 0,
         "tooltip-format": "<span>{calendar}</span>",
         "on-click": "kitty --class 'calcurse' --title 'Calendar' calcurse",
