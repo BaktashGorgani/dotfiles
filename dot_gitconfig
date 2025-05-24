@@ -1,0 +1,25 @@
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[user]
+	email = 17418270+BaktashGorgani@users.noreply.github.com
+	name = Baktash Gorgani
+[init]
+	defaultBranch = main
+[diff]
+	submodule = log
+[status]
+	submodulesummary = on
+	aheadBehind = on
+	branch = on
+	displayCommentPrefix = on
+	relativePaths = on
+	renames = on
+	showStash = on
+[submodule]
+	recurse = on
+[merge]
+	tool = nvimdiff
