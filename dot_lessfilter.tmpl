@@ -110,5 +110,9 @@ elif [ "$category" = text ]; then
 		pygmentize "$1" | less
 	fi
 else
-    lesspipe.sh "$1" | bat --color=always
+    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
+        lessopen.sh "$1" | bat --color=always
+    {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+        lesspipe.sh "$1" | bat --color=always
+    {{ end }}
 fi
