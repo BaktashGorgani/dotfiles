@@ -1,3 +1,4 @@
+eza_cmd='eza -al --icons=always --color=always --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
 # apply to all command
 zstyle ':fzf-tab:*' popup-min-size 200 20
 # disable sort when completing `git checkout`
@@ -9,8 +10,13 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
+# preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview $eza_cmd '$realpath'
+zstyle ':fzf-tab:complete:z:*' fzf-preview $eza_cmd '$realpath'
 # custom fzf flags
-zstyle ':fzf-tab:complete:nvim:*' fzf-preview 'syncat $word'
+zstyle ':fzf-tab:complete:nvim:*' fzf-preview \
+    '[[ -d $realpath ]] && '$eza_cmd' $realpath \
+    || syncat ${(Q)realpath}'
 # NOTE: fzf-tab does not follow FZF_DEFAULT_OPTS by default
 zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2
 # switch group using `<` and `>`
