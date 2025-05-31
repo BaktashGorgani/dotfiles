@@ -48,7 +48,7 @@ alias la='ls -A'
 alias l='ls -CF'
 
 # eza
-alias ez='eza -al --icons=always --color=always --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
+alias ez='eza -al --total-size --icons=always --color=always --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
 alias ezt='ez -T'
 
 # load new wallpapers
