@@ -1,4 +1,4 @@
-eza_cmd='eza -al --icons=always --color=always --group-directories-first --git --git-repos --time-style="+%b %d %Y %l:%M %p"'
+eza_cmd='eza -al --total-size --icons=always --color=always --group-directories-first --git --git-repos-no-status --time-style="+%b %d %Y %l:%M %p"'
 # apply to all command
 zstyle ':fzf-tab:*' popup-min-size 200 20
 # disable sort when completing `git checkout`
