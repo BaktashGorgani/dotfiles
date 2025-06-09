@@ -10,9 +10,10 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
 zstyle ':completion:*' menu no
-# preview directory's content with eza when completing cd
+# preview directory's content with eza when completing cd, z, or zi
 zstyle ':fzf-tab:complete:cd:*' fzf-preview $eza_cmd '$realpath'
 zstyle ':fzf-tab:complete:z:*' fzf-preview $eza_cmd '$realpath'
+#zstyle ':fzf-tab:complete:zi:*' fzf-preview $eza_cmd '$realpath'
 # custom fzf flags
 zstyle ':fzf-tab:complete:nvim:*' fzf-preview \
     '[[ -d $realpath ]] && '$eza_cmd' $realpath \

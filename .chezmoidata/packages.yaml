@@ -1,6 +1,7 @@
 packages:
   cargos:
     - 'eza'
+    - 'syncat'
   brews:
     - 'jandedobbeleer/oh-my-posh/oh-my-posh'
     - 'jesseduffield/lazygit/lazygit'
@@ -30,6 +31,7 @@ packages:
       - 'gcc'
       - 'gh'
       - 'git'
+      - 'git-delta'
       - 'glibc'
       - 'gopls'
       - 'gum'
@@ -44,6 +46,7 @@ packages:
       - 'man'
       - 'neovim'
       - 'openssh'
+      - 'openssl-devel'
       - 'openSUSE-build-key'
       - 'openSUSE-release'
       - 'openSUSE-release-appliance-wsl'
