@@ -117,9 +117,15 @@ log "Rust Updated"
 
 log "Installing Rust packages..."
 
-cargo install {{ range .packages.cargos }}{{ . | quote }} {{ end }}
+cargo install {{ range .packages.crates }}{{ . | quote }} {{ end }}
 
 log "Rust packages installed!"
+
+log "Installing Rust-Analyzer"
+
+rustup component add rust-analyzer
+
+log "Rust-Analyzer installed!"
 
 log "Checking for zoxide..."
 

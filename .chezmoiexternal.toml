@@ -37,6 +37,11 @@
     url =  "https://github.com/Aloxaf/fzf-tab"
     refreshPeriod = "168h"
 
+[".zsh_custom/plugins/zsh-vi-mode"]
+    type = "git-repo"
+    url =  "https://github.com/jeffreytse/zsh-vi-mode"
+    refreshPeriod = "168h"
+
 [".config/nvim"]
     type = "git-repo"
     url = "https://github.com/BaktashGorgani/nvim-config.git"

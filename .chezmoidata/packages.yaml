@@ -1,5 +1,5 @@
 packages:
-  cargos:
+  crates:
     - 'eza'
     - 'syncat'
   brews:
