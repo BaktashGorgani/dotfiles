@@ -1,4 +1,4 @@
- [agda]
+[agda]
 source = "https://github.com/tree-sitter/tree-sitter-agda"
 name = "agda"
 library = "tree-sitter-agda"

@@ -29,6 +29,7 @@ packages:
       - 'filesystem'
       - 'fzf'
       - 'gcc'
+      - 'gcc-c++'
       - 'gh'
       - 'git'
       - 'git-delta'

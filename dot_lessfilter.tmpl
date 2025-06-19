@@ -104,11 +104,17 @@ elif [ "$category" = image ]; then
 	fi
 # https://github.com/wofr06/lesspipe/pull/117
 elif [ "$category" = text ]; then
-	if has_cmd bat; then
-		bat --color=always "$1"
-	elif has_cmd pygmentize; then
-		pygmentize "$1" | less
-	fi
+    if [ "$kind" != plain ]; then
+        if has_cmd syncat; then
+            syncat "$1"
+        fi
+    else
+        if has_cmd bat; then
+            bat --color=always "$1"
+        elif has_cmd pygmentize; then
+            pygmentize "$1" | less
+        fi
+    fi
 else
     {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
         lessopen.sh "$1" | bat --color=always

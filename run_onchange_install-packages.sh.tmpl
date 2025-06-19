@@ -13,24 +13,12 @@ log "\nBEGIN INSTALL SCRIPT\n"
     $ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
 
     log "Zypper packages installed!"
-
-    log "Updating zypper packages..."
-
-    $ZYPPER_NON_INTERACTIVE update
-
-    log "Zypper packages updated!"
 {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
     log "Installing dnf packages..."
 
     sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
 
     log "Dnf packages installed!"
-
-    log "Updating dnf packages..."
-
-    sudo dnf update -y
-
-    log "Dnf packages updated!"
 
     log "Installing flatpak packages..."
     {{ range .packages.fedora.home.flatpaks }}
@@ -43,12 +31,6 @@ log "\nBEGIN INSTALL SCRIPT\n"
     {{ end }}
     echo
     log "Flatpak packages installed!"
-
-    log "Updating flatpak packages..."
-
-    flatpak update -y
-
-    log "Flatpak packages updated!"
 {{ end }}
 log "Checking for Homebrew..."
 
@@ -74,12 +56,6 @@ log "Installing Homebrew packages..."
 echo
 log "Homebrew packages installed!"
 
-log "Updating Homebrew packages..."
-
-brew update && brew upgrade
-
-log "Homebrew packages updated!"
-
 log "Installing TPM plugins..."
 {{ range .packages.tpms }}
     if [[ ! -d "$HOME/.tmux/plugins/{{ . }}" ]]; then
@@ -90,12 +66,6 @@ log "Installing TPM plugins..."
     fi
 {{ end }}
 log "TPM plugins installed!"
-
-log "Updating TPM Plugins..."
-
-$HOME/.tmux/plugins/tpm/bin/update_plugins all
-
-log "TPM plugins updated!"
 
 log "Checking for Rust..."
 
@@ -108,12 +78,6 @@ else
 
     log "Rust installed!"
 fi
-
-log "Updating Rust..."
-
-rustup update
-
-log "Rust Updated"
 
 log "Installing Rust packages..."
 
