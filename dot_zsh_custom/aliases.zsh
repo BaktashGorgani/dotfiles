@@ -3,11 +3,6 @@ alias zshrc='nvim ~/.zshrc'
 alias zsh-custom='nvim ~/.zsh_custom'
 alias origin='git push origin main'
 alias live='git push live main'
-alias sas='cd ~/Git/SASN_Admin && activate'
-alias collectstatic='python manage.py collectstatic'
-alias makemigrations='python manage.py makemigrations'
-alias migrate='python manage.py migrate'
-alias runserver='python manage.py runserver'
 alias activate='source ./venv/bin/activate'
 alias arrislc='cd ~/git/arris-lc-failover && activate'
 alias nvim-config='cd ~/.config/nvim && nvim .'
@@ -40,7 +35,7 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 # colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # some more ls aliases
 alias ll='ls -alh'
@@ -53,4 +48,9 @@ alias ezt='ez -T'
 
 # load new wallpapers
 alias wallpaper='$HOME/git/bing_wallpaper/bing_wallpaper_optimized'
+
+# lazygit
 alias lg='lazygit'
+
+# chezmoi update and refresh
+alias cur='chezmoi update --refresh-externals'
