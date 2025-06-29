@@ -9,6 +9,3 @@ export FZF_ALT_C_OPTS="
     $FZF_DEFAULT_OPTS
     --preview 'eza -T --color=always --icons=always {}'
 "
-
-# Set up fzf key bindings and fuzzy completion
-#source <(fzf --zsh)

@@ -19,5 +19,6 @@ zvm_config() {
 
 # The plugin will auto execute this zvm_after_init function
 function zvm_after_init() {
+  # Set up fzf key bindings and fuzzy completion
   source <(fzf --zsh)
 }
