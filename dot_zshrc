@@ -1,5 +1,8 @@
 # .zshrc
 
+# Custom Completions
+fpath+=~/.zsh_completions
+
 # Rust Completions
 fpath+=~/.zfunc
 
