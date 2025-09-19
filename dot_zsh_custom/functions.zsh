@@ -65,9 +65,6 @@ fgcc () {
         )
 }
 
-fs () { interactively 'sed -e {} '$1''; }
-fg () { interactively 'grep --color=always {} '$1''; }
-
 screenshot () {
     local filename="$HOME/Pictures/Screenshots/Screenshot_$(date +%Y-%m-%d-%H-%M-%S).png"
     grimshot savecopy anything "$filename"
