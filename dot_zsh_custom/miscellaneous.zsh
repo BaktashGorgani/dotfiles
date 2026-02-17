@@ -1,5 +1,5 @@
 # Copilot functions
-eval "$(gh copilot alias -- zsh)"
+#eval "$(gh copilot alias -- zsh)"
 
 # Homebrew
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
