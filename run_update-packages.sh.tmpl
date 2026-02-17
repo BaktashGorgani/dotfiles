@@ -6,25 +6,27 @@ function log() {
 
 log "\nBEGIN UPDATE SCRIPT\n"
 
-{{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-    log "Updating zypper packages..."
+{{ if eq .chezmoi.os "linux" }}
+    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
+        log "Updating zypper packages..."
 
-    ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-    $ZYPPER_NON_INTERACTIVE update
+        ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
+        $ZYPPER_NON_INTERACTIVE update
 
-    log "Zypper packages updated!"
-{{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
-    log "Updating dnf packages..."
+        log "Zypper packages updated!"
+    {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+        log "Updating dnf packages..."
 
-    sudo dnf update -y
+        sudo dnf update -y
 
-    log "Dnf packages updated!"
+        log "Dnf packages updated!"
 
-    log "Updating flatpak packages..."
+        log "Updating flatpak packages..."
 
-    flatpak update -y
+        flatpak update -y
 
-    log "Flatpak packages updated!"
+        log "Flatpak packages updated!"
+    {{ end }}
 {{ end }}
 log "Updating Homebrew packages..."
 

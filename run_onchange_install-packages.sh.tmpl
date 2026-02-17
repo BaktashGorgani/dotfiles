@@ -6,31 +6,33 @@ function log() {
 
 log "\nBEGIN INSTALL SCRIPT\n"
 
-{{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-    log "Installing zypper packages..."
+{{ if eq .chezmoi.os "linux" }}
+    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
+        log "Installing zypper packages..."
 
-    ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-    $ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
+        ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
+        $ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
 
-    log "Zypper packages installed!"
-{{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
-    log "Installing dnf packages..."
+        log "Zypper packages installed!"
+    {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+        log "Installing dnf packages..."
 
-    sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
+        sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
 
-    log "Dnf packages installed!"
+        log "Dnf packages installed!"
 
-    log "Installing flatpak packages..."
-    {{ range .packages.fedora.home.flatpaks }}
-        if ! flatpak info {{ . }} &> /dev/null; then
-            printf "\nInstalling {{ . }}...\n"
-            flatpak install -y {{ . }}
-        else
-            printf "\n{{ . }} already installed!\n"
-        fi
+        log "Installing flatpak packages..."
+        {{ range .packages.fedora.home.flatpaks }}
+            if ! flatpak info {{ . }} &> /dev/null; then
+                printf "\nInstalling {{ . }}...\n"
+                flatpak install -y {{ . }}
+            else
+                printf "\n{{ . }} already installed!\n"
+            fi
+        {{ end }}
+        echo
+        log "Flatpak packages installed!"
     {{ end }}
-    echo
-    log "Flatpak packages installed!"
 {{ end }}
 log "Checking for Homebrew..."
 
