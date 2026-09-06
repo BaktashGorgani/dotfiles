@@ -32,7 +32,7 @@
 # errors that are written to stdout/stderr
 
 WALLPAPER_DIR="$HOME/wallpaper"
-LOG_FILE="$HOME/logs/change_wallpaper.log"
+LOG_FILE=""
 CYCLES=3
 
 PROGRAMS=(hyprctl hyprpaper gum jq)
@@ -54,9 +54,24 @@ declare -i SPARE_WALL_COUNT
 declare -a ALL_WALLS
 declare -a NEW_WALLS
 
+# cron/systemd timers don't inherit the Hyprland session environment, so
+# hyprctl can't reach the compositor and just prints an error string to
+# stdout (which would then be captured as bogus "wallpaper" data below).
+# Rebuild the minimal environment hyprctl needs, then confirm we can
+# actually talk to Hyprland before continuing.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [[ -z "$HYPRLAND_INSTANCE_SIGNATURE" && -d "$XDG_RUNTIME_DIR/hypr" ]]; then
+    HYPRLAND_INSTANCE_SIGNATURE=$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -n1)
+    export HYPRLAND_INSTANCE_SIGNATURE
+fi
+
+if ! hyprctl -i 0 monitors -j >/dev/null 2>&1; then
+    $LOG fatal "Cannot reach Hyprland. Is it running? |" signature "${HYPRLAND_INSTANCE_SIGNATURE:-unset}"
+fi
+
 if [[ -z "$LOG_FILE" ]]; then
     LOG="gum log -strfc822 -l"
-    $LOG warning "Log file not set. Will log to stdout."
+    $LOG warn "Log file not set. Will log to stdout."
 else
     LOG_DIR=$(dirname "$LOG_FILE")
     mkdir -p "$LOG_DIR"
@@ -85,9 +100,15 @@ if [[ ! -d "$WALLPAPER_DIR" || ! -s "$WALLPAPER_DIR" ]]; then
 fi
 $LOG info "Wallpaper directory set |" dir "$WALLPAPER_DIR"
 
-mapfile -t CURRENT_WALL_PATHS < <(hyprctl -i 0 hyprpaper listloaded)
+mapfile -t CURRENT_WALL_PATHS < <(hyprctl -i 0 hyprpaper listactive)
 $LOG info "Current wallpapers gathered |" files "${CURRENT_WALL_PATHS[*]}"
-mapfile -t CURRENT_WALLS < <(basename -a "${CURRENT_WALL_PATHS[@]}")
+
+if [[ -z "${CURRENT_WALL_PATHS[*]}" ]]; then
+    $LOG info "No wallpapers currently active. Nothing to exclude."
+    CURRENT_WALLS=()
+else
+    mapfile -t CURRENT_WALLS < <(basename -a "${CURRENT_WALL_PATHS[@]}")
+fi
 
 mapfile -t MONITORS < <(hyprctl -i 0 monitors -j | jq -r '.[] | .name')
 $LOG info "Monitors gathered |" monitors "${MONITORS[*]}"
@@ -110,7 +131,7 @@ elif (( CYCLES == 0 )); then
     $LOG info "No cycles set. Will reuse wallpapers."
     mapfile -t NEW_WALLS < <($FIND_CMD | shuf -n "$MONITOR_COUNT")
 else
-    $LOG warning "Not enough spare wallpapers :(. Will reuse wallpapers."
+    $LOG warn "Not enough spare wallpapers :(. Will reuse wallpapers."
     mapfile -t ALL_WALLS < <($FIND_CMD)
     for (( i=0; i<MONITOR_COUNT; i++ )); do
         NEW_WALLS[i]=${ALL_WALLS[$RANDOM % ${#ALL_WALLS[@]}]}
@@ -120,20 +141,20 @@ $LOG info "New wallpapers gathered |" files "${NEW_WALLS[*]}"
 
 $LOG info "Data gathered successfully!"
 
-$LOG info "Reloading wallpapers..."
+$LOG info "Setting wallpapers..."
 for (( i=0; i<MONITOR_COUNT; i++ )); do
-    hyprctl -i 0 hyprpaper reload "${MONITORS[$i]}", "${NEW_WALLS[$i]}" >/dev/null
-    $LOG info "Wallpaper reloaded |" monitor "${MONITORS[$i]}" wallpaper "${NEW_WALLS[$i]}"
+    hyprctl -i 0 hyprpaper wallpaper "${MONITORS[$i]},${NEW_WALLS[$i]}"
+    $LOG info "Wallpaper set |" monitor "${MONITORS[$i]}" wallpaper "${NEW_WALLS[$i]}"
 done
 
-mapfile -t NEW_WALL_PATHS < <(hyprctl -i 0 hyprpaper listloaded)
+mapfile -t NEW_WALL_PATHS < <(hyprctl -i 0 hyprpaper listactive)
 
-if [[ "${NEW_WALL_PATHS[*]}" == "no wallpapers loaded" ]]; then
+if [[ -z "${NEW_WALL_PATHS[*]}" ]]; then
     $LOG error "No wallpapers loaded."
 elif [[ "${NEW_WALL_PATHS[*]}" == "${CURRENT_WALL_PATHS[*]}" ]]; then
     $LOG error "No new wallpapers loaded."
 else
-    $LOG info "Wallpapers reloaded successfully!"
+    $LOG info "Wallpapers set successfully!"
 fi
 
 $LOG info "Ending script"
