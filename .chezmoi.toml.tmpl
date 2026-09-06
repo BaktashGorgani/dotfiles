@@ -3,5 +3,4 @@ encryption = "age"
     identity = "~/.config/chezmoi/key.txt"
     recipient = "age1kf5td2p52nqeu93n6ljk0y03d0v6nlhugq9r59nnjtukvd8zfylsyqqdkh"
 [diff]
-    command = "nvim"
-    args = ["-d", "{{ "{{" }} .Destination {{ "}}" }}", "{{ "{{" }} .Target {{ "}}" }}"]
+    pager = "delta"
