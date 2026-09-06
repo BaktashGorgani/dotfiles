@@ -1,0 +1,6 @@
+[Unit]
+Description=Activity watch - Chrome history deletion check (one-shot)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/activity-watch-history.sh
