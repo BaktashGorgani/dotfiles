@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""
+activity-watch-check
+
+Shows activity-watch findings (history-deletion alerts and tab/window
+activity) since the last time this command was run, then advances a
+saved checkpoint so the next run only shows what's new -- similar to
+"marking things as read".
+
+Usage:
+  activity-watch-check           Show new activity since last check, and
+                                  advance the checkpoint to now.
+  activity-watch-check --peek    Show the same, but don't advance the
+                                  checkpoint (a look without "marking as
+                                  read").
+"""
+import glob
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+DATA_DIR = Path.home() / ".local" / "share" / "activity-watch"
+STATE_FILE = DATA_DIR / "last-checked.txt"
+
+
+def read_checkpoint():
+    if STATE_FILE.exists():
+        try:
+            return datetime.fromisoformat(STATE_FILE.read_text().strip())
+        except ValueError:
+            pass
+    return None
+
+
+def write_checkpoint(ts: datetime):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(ts.isoformat())
+
+
+def iter_alerts():
+    for f in sorted(glob.glob(str(DATA_DIR / "alerts" / "*.log"))):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                ts_str = line.split(" ", 1)[0]
+                try:
+                    ts = datetime.fromisoformat(ts_str)
+                except ValueError:
+                    continue
+                yield ts, line
+
+
+def iter_window_events():
+    for f in sorted(glob.glob(str(DATA_DIR / "window-logs" / "*.jsonl"))):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    ts = datetime.fromisoformat(entry["ts"])
+                except Exception:
+                    continue
+                yield ts, entry
+
+
+def main():
+    peek = "--peek" in sys.argv[1:]
+    now = datetime.now().astimezone()
+    checkpoint = read_checkpoint()
+
+    if checkpoint is None:
+        print("First check -- showing all recorded activity.\n")
+        checkpoint = datetime.min.replace(tzinfo=timezone.utc)
+    else:
+        print(f"Showing activity since last check: {checkpoint.isoformat()}\n")
+
+    print("=== History-deletion alerts ===")
+    alerts = [line for ts, line in iter_alerts() if ts >= checkpoint]
+    if alerts:
+        for line in alerts:
+            print(line)
+    else:
+        print("(none)")
+
+    print()
+    print("=== Tab/window activity ===")
+    events = [(ts, e) for ts, e in iter_window_events() if ts >= checkpoint]
+    title_changes = [(ts, e) for ts, e in events if e.get("event") == "title_changed"]
+    if title_changes:
+        print(f"{len(title_changes)} tab title change(s) across {len(events)} total logged event(s):\n")
+        for ts, e in title_changes:
+            print(f"  {ts.strftime('%Y-%m-%d %H:%M:%S')}  {e.get('title', '')}")
+    else:
+        print("(none)")
+
+    print()
+    if peek:
+        print("(--peek: checkpoint not updated, next check will show this again)")
+    else:
+        write_checkpoint(now)
+        print(f"Checkpoint updated to {now.isoformat()}")
+
+
+if __name__ == "__main__":
+    main()
