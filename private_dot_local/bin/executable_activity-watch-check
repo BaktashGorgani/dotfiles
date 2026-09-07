@@ -3,16 +3,18 @@
 activity-watch-check
 
 Shows activity-watch findings (history-deletion alerts and tab/window
-activity) since the last time this command was run, then advances a
-saved checkpoint so the next run only shows what's new -- similar to
-"marking things as read".
+activity) since the last time this command's checkpoint was advanced.
+
+By default this is a read-only peek: it never advances the checkpoint,
+so running it repeatedly keeps showing the same "since last mark-read"
+window. Pass --mark-read to advance the checkpoint to now after showing
+the results, similar to "marking things as read".
 
 Usage:
-  activity-watch-check           Show new activity since last check, and
-                                  advance the checkpoint to now.
-  activity-watch-check --peek    Show the same, but don't advance the
-                                  checkpoint (a look without "marking as
-                                  read").
+  activity-watch-check              Show activity since the last mark-read,
+                                     without changing the checkpoint.
+  activity-watch-check --mark-read  Show the same, then advance the
+                                     checkpoint to now.
 """
 import glob
 import json
@@ -69,7 +71,7 @@ def iter_window_events():
 
 
 def main():
-    peek = "--peek" in sys.argv[1:]
+    mark_read = "--mark-read" in sys.argv[1:]
     now = datetime.now().astimezone()
     checkpoint = read_checkpoint()
 
@@ -99,11 +101,11 @@ def main():
         print("(none)")
 
     print()
-    if peek:
-        print("(--peek: checkpoint not updated, next check will show this again)")
-    else:
+    if mark_read:
         write_checkpoint(now)
         print(f"Checkpoint updated to {now.isoformat()}")
+    else:
+        print("(checkpoint not updated -- pass --mark-read to advance it)")
 
 
 if __name__ == "__main__":
