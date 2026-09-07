@@ -139,6 +139,10 @@ tooltip {
     padding: 0px;
 }
 
+#custom-power {
+    padding-right: 8px;
+}
+
 #custom-r_end {
     border-radius: 0px 21px 21px 0px;
     margin-right: 9px;
