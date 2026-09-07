@@ -1,0 +1,8 @@
+[Unit]
+Description=Change desktop wallpaper
+PartOf=graphical-session.target
+After=graphical-session.target hyprpaper.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/hypr/scripts/change_wallpaper.bash

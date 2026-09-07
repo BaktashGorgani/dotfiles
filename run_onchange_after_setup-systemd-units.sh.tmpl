@@ -1,0 +1,28 @@
+#!/bin/sh
+# vim: filetype=sh
+
+{{ if eq .chezmoi.os "linux" }}
+echo "Enabling systemd --user units..."
+
+systemctl --user daemon-reload
+
+systemctl --user enable --now \
+    hyprpaper.service \
+    hypridle.service \
+    waybar.service \
+    dunst.service \
+    gammastep.service \
+    hyprpolkitagent.service \
+    wl-clip-persist.service \
+    cliphist-text.service \
+    cliphist-image.service \
+    change-wallpaper.timer \
+    activity-watch-history.timer \
+    activity-watch-windows.service
+
+# swaync (pulled in as a COPR dependency of nwg-shell) fights dunst for the
+# notifications D-Bus name; block it outright regardless of install order.
+systemctl --user mask swaync.service
+
+echo "systemd --user units enabled."
+{{ end }}

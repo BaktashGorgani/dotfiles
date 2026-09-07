@@ -1,0 +1,12 @@
+[Unit]
+Description=Persist Wayland clipboard contents
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/git/wl-clip-persist/target/release/wl-clip-persist -c regular
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

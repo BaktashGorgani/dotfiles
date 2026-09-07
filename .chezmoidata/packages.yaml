@@ -262,6 +262,7 @@ packages:
         - 'hyprland-devel'
         - 'hyprlock'
         - 'hyprpaper'
+        - 'hyprpolkitagent'
         - 'imv'
         - 'inkscape'
         - 'intel-audio-firmware'

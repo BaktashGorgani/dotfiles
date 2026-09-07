@@ -46,3 +46,8 @@
     type = "git-repo"
     url = "https://github.com/BaktashGorgani/nvim-config.git"
     refreshPeriod = "24h"
+
+["git/wl-clip-persist"]
+    type = "git-repo"
+    url = "https://github.com/Linus789/wl-clip-persist"
+    refreshPeriod = "168h"

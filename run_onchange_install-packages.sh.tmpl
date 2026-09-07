@@ -15,6 +15,13 @@ log "\nBEGIN INSTALL SCRIPT\n"
 
         log "Zypper packages installed!"
     {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+        log "Enabling required COPR repos..."
+
+        sudo dnf copr enable -y sdegler/hyprland
+        sudo dnf copr enable -y tofik/nwg-shell
+
+        log "COPR repos enabled!"
+
         log "Installing dnf packages..."
 
         sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
