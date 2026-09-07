@@ -1,0 +1,12 @@
+[Unit]
+Description=Polkit authentication agent (fallback: hyprpolkitagent COPR build is Qt6-ABI-incompatible)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/libexec/polkit-gnome-authentication-agent-1
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

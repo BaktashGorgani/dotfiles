@@ -12,7 +12,7 @@ systemctl --user enable --now \
     waybar.service \
     dunst.service \
     gammastep.service \
-    hyprpolkitagent.service \
+    polkit-gnome-authentication-agent.service \
     wl-clip-persist.service \
     cliphist-text.service \
     cliphist-image.service \
@@ -23,6 +23,14 @@ systemctl --user enable --now \
 # swaync (pulled in as a COPR dependency of nwg-shell) fights dunst for the
 # notifications D-Bus name; block it outright regardless of install order.
 systemctl --user mask swaync.service
+
+# hyprpolkitagent's sdegler/hyprland COPR build (0.1.3-6.fc44) is linked
+# against an older Qt6 private ABI than Fedora 44 currently ships
+# (qt6-qtdeclarative 6.11.2), so its QML auth dialog fails to load and
+# pkexec hangs forever waiting for a UI that can never render. Mask it
+# until the COPR publishes a rebuild against the current Qt6, and use the
+# manually-built polkit-gnome-authentication-agent-1 above in the meantime.
+systemctl --user mask hyprpolkitagent.service
 
 echo "systemd --user units enabled."
 {{ end }}
