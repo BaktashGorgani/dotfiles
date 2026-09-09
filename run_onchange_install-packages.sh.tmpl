@@ -94,6 +94,14 @@ cargo install {{ range .packages.crates }}{{ . | quote }} {{ end }}
 
 log "Rust packages installed!"
 
+log "Installing Rust packages from git..."
+{{ range .packages.git_crates }}
+    printf "\nInstalling {{ . }}...\n"
+    cargo install --locked --git {{ . | quote }}
+{{ end }}
+echo
+log "Rust git packages installed!"
+
 log "Installing Rust-Analyzer"
 
 rustup component add rust-analyzer

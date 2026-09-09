@@ -46,4 +46,10 @@ rustup update
 
 log "Rust Updated"
 
+log "Updating Rust packages..."
+
+cargo install-update --git --all
+
+log "Rust packages updated!"
+
 log "\nEND UPDATE SCRIPT\n"

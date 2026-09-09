@@ -5,7 +5,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/git/wl-clip-persist/target/release/wl-clip-persist -c regular
+ExecStart=%h/.cargo/bin/wl-clip-persist -c regular
 Restart=on-failure
 
 [Install]

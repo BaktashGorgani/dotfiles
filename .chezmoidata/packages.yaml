@@ -1,7 +1,10 @@
 packages:
   crates:
+    - 'cargo-update'
     - 'eza'
     - 'syncat'
+  git_crates:
+    - 'https://github.com/Linus789/wl-clip-persist'
   brews:
     - 'gemini-cli'
     - 'jandedobbeleer/oh-my-posh/oh-my-posh'
