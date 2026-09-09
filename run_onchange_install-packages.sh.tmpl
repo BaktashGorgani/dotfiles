@@ -30,9 +30,14 @@ log "\nBEGIN INSTALL SCRIPT\n"
 
         log "Installing flatpak packages..."
         {{ range .packages.fedora.home.flatpaks }}
-            if ! flatpak info {{ . }} &> /dev/null; then
+            # `flatpak info` errors out when an id has several branches installed,
+            # which would make us try to reinstall an already-present runtime, so
+            # match against the installed list by application id instead.
+            if ! flatpak list --columns=application | grep -qx {{ . | quote }}; then
                 printf "\nInstalling {{ . }}...\n"
-                flatpak install -y {{ . }}
+                # Name the remote explicitly; some ids (e.g. org.videolan.VLC)
+                # exist on both `fedora` and `flathub` and would otherwise prompt.
+                flatpak install -y --noninteractive flathub {{ . }}
             else
                 printf "\n{{ . }} already installed!\n"
             fi
@@ -90,14 +95,21 @@ fi
 
 log "Installing Rust packages..."
 
-cargo install {{ range .packages.crates }}{{ . | quote }} {{ end }}
+# --locked honours each crate's committed Cargo.lock; without it cargo resolves
+# to latest compatible deps, which breaks crates whose deps have shipped
+# semver-incompatible changes (e.g. eza -> palette/palette_derive).
+cargo install --locked {{ range .packages.crates }}{{ . | quote }} {{ end }}
 
 log "Rust packages installed!"
 
 log "Installing Rust packages from git..."
 {{ range .packages.git_crates }}
-    printf "\nInstalling {{ . }}...\n"
-    cargo install --locked --git {{ . | quote }}
+    if ! cargo install --list | grep -q "^{{ base . }} "; then
+        printf "\nInstalling {{ . }}...\n"
+        cargo install --locked --git {{ . | quote }}
+    else
+        printf "\n{{ base . }} already installed!\n"
+    fi
 {{ end }}
 echo
 log "Rust git packages installed!"
