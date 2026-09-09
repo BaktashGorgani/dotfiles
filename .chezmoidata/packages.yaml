@@ -372,6 +372,10 @@ packages:
         - 'openssh-askpass'
         - 'openssh-clients'
         - 'openssh-server'
+        # Required to build the openssl-sys crate (cargo-update, syncat).
+        # Present here only as transitive deps until now, so a fresh install
+        # would fail and `dnf autoremove` could reclaim them.
+        - 'openssl-devel'
         - 'PackageKit-gstreamer-plugin'
         - 'pam-devel'
         - 'pandoc-cli'
@@ -389,6 +393,7 @@ packages:
         - 'pipewire-pulseaudio'
         - 'pipewire-utils'
         - 'pipx'
+        - 'pkgconf-pkg-config'
         - 'playerctl'
         - 'plexmediaserver'
         - 'plocate'

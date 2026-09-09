@@ -88,6 +88,12 @@ log "Installing TPM plugins..."
 {{ end }}
 log "TPM plugins installed!"
 
+# rustup and cargo live in ~/.cargo/bin, which only reaches PATH via this env
+# file. Source it up front so an existing toolchain is detected regardless of
+# the PATH this script inherited, otherwise every run reports "Rust not found"
+# and reinstalls rustup.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
 log "Checking for Rust..."
 
 if hash rustup &>/dev/null; then
@@ -95,37 +101,50 @@ if hash rustup &>/dev/null; then
 else
     log "Rust not found, installing..."
 
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    # -y is required: the installer aborts with "Unable to run interactively"
+    # when stdin is not a terminal, which is always the case here.
+    # --no-modify-path because dot_zshenv and dot_bashrc already source
+    # cargo's env, and anything rustup appends to those chezmoi-managed files
+    # would be reverted on the next apply.
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+
+    # rustup only edits shell rc files, so this process still needs cargo on
+    # PATH before anything below can run.
+    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
     log "Rust installed!"
 fi
 
-log "Installing Rust packages..."
+if ! hash cargo &>/dev/null; then
+    log "ERROR: cargo unavailable after Rust setup; skipping Rust packages!"
+else
+    log "Installing Rust packages..."
 
-# --locked honours each crate's committed Cargo.lock; without it cargo resolves
-# to latest compatible deps, which breaks crates whose deps have shipped
-# semver-incompatible changes (e.g. eza -> palette/palette_derive).
-cargo install --locked {{ range .packages.crates }}{{ . | quote }} {{ end }}
+    # --locked honours each crate's committed Cargo.lock; without it cargo
+    # resolves to latest compatible deps, which breaks crates whose deps have
+    # shipped semver-incompatible changes (e.g. eza -> palette/palette_derive).
+    cargo install --locked {{ range .packages.crates }}{{ . | quote }} {{ end }}
 
-log "Rust packages installed!"
+    log "Rust packages installed!"
 
-log "Installing Rust packages from git..."
-{{ range .packages.git_crates }}
-    if ! cargo install --list | grep -q "^{{ base . }} "; then
-        printf "\nInstalling {{ . }}...\n"
-        cargo install --locked --git {{ . | quote }}
-    else
-        printf "\n{{ base . }} already installed!\n"
-    fi
-{{ end }}
-echo
-log "Rust git packages installed!"
+    log "Installing Rust packages from git..."
+    {{ range .packages.git_crates }}
+        if ! cargo install --list | grep -q "^{{ base . }} "; then
+            printf "\nInstalling {{ . }}...\n"
+            cargo install --locked --git {{ . | quote }}
+        else
+            printf "\n{{ base . }} already installed!\n"
+        fi
+    {{ end }}
+    echo
+    log "Rust git packages installed!"
 
-log "Installing Rust-Analyzer"
+    log "Installing Rust-Analyzer"
 
-rustup component add rust-analyzer
+    rustup component add rust-analyzer
 
-log "Rust-Analyzer installed!"
+    log "Rust-Analyzer installed!"
+fi
 
 log "Checking for zoxide..."
 
