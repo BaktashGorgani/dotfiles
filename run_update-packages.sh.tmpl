@@ -21,11 +21,42 @@ log "\nBEGIN UPDATE SCRIPT\n"
 
         log "Dnf packages updated!"
 
+        log "Cleaning up dnf..."
+
+        sudo dnf autoremove -y
+        sudo dnf clean packages
+
+        log "Dnf cleaned up!"
+
         log "Updating flatpak packages..."
 
         flatpak update -y
 
         log "Flatpak packages updated!"
+
+        log "Cleaning up flatpak..."
+
+        # Pins are never dropped automatically, even once the ref they name is
+        # gone (flatpak/flatpak#5058), and a stale pin silently exempts that ref
+        # from --unused and end-of-life cleanup. Prune pins with no matching
+        # installed ref. Wildcard and partial patterns are deliberate, so keep
+        # them.
+        flatpak pin 2>/dev/null | sed -n 's/^[[:space:]]\+//p' | while read -r pattern; do
+            case "$pattern" in
+                *'*'*) continue ;;
+                runtime/*/*/*) ;;
+                *) continue ;;
+            esac
+            if ! flatpak list --columns=ref | grep -qx "${pattern#runtime/}"; then
+                printf "\nRemoving stale pin %s...\n" "$pattern"
+                sudo flatpak pin --remove "$pattern"
+            fi
+        done
+
+        # `flatpak update` only offers this interactively, and we pass -y above.
+        flatpak uninstall --unused -y --noninteractive
+
+        log "Flatpak cleaned up!"
     {{ end }}
 {{ end }}
 log "Updating Homebrew packages..."
@@ -34,11 +65,26 @@ brew update && brew upgrade
 
 log "Homebrew packages updated!"
 
+log "Cleaning up Homebrew..."
+
+# Drop formulae kept only as dependencies of something since uninstalled, then
+# purge superseded versions and stale downloads.
+brew autoremove
+brew cleanup --prune=all
+
+log "Homebrew cleaned up!"
+
 log "Updating TPM Plugins..."
 
 $HOME/.tmux/plugins/tpm/bin/update_plugins all
 
 log "TPM plugins updated!"
+
+# Deliberately no `tpm clean_plugins` here. tmux-nerd-font-window-name lives in
+# ~/.tmux/plugins but is managed as a chezmoi external and invoked by path
+# rather than declared with @plugin, so tpm treats it as foreign and deletes it.
+# chezmoi would then restore it on the next apply, causing it to be churned on
+# every update.
 
 log "Updating Rust..."
 
@@ -51,5 +97,13 @@ log "Updating Rust packages..."
 cargo install-update --locked --git --all
 
 log "Rust packages updated!"
+
+log "Cleaning up Rust..."
+
+# Cargo never prunes the registry. --autoclean drops extracted sources but
+# keeps the .crate archives, so rebuilds stay fast.
+cargo cache --autoclean
+
+log "Rust cleaned up!"
 
 log "\nEND UPDATE SCRIPT\n"

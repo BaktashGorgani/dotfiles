@@ -28,16 +28,23 @@ log "\nBEGIN INSTALL SCRIPT\n"
 
         log "Dnf packages installed!"
 
+        # This list must contain applications only. Explicitly installing a
+        # runtime makes flatpak auto-pin it (see flatpak-pin(1)), and pins are
+        # never cleaned up (flatpak/flatpak#5058), which permanently exempts the
+        # ref from `--unused` and end-of-life cleanup. Runtimes, GL/VAAPI
+        # extensions and themes are resolved as dependencies instead, with the
+        # correct branch and no pin. --app makes a stray runtime a loud failure
+        # rather than a silent new pin.
         log "Installing flatpak packages..."
         {{ range .packages.fedora.home.flatpaks }}
             # `flatpak info` errors out when an id has several branches installed,
-            # which would make us try to reinstall an already-present runtime, so
+            # which would make us try to reinstall an already-present ref, so
             # match against the installed list by application id instead.
-            if ! flatpak list --columns=application | grep -qx {{ . | quote }}; then
+            if ! flatpak list --app --columns=application | grep -qx {{ . | quote }}; then
                 printf "\nInstalling {{ . }}...\n"
                 # Name the remote explicitly; some ids (e.g. org.videolan.VLC)
                 # exist on both `fedora` and `flathub` and would otherwise prompt.
-                flatpak install -y --noninteractive flathub {{ . }}
+                flatpak install -y --noninteractive --app flathub {{ . }}
             else
                 printf "\n{{ . }} already installed!\n"
             fi
