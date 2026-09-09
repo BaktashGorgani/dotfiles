@@ -1,5 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 # vim: filetype=sh
+
+# This script uses bash features throughout (brace expansion, [[, &>), so the
+# shebang must be bash rather than sh.
+#
+# -e   abort on the first command that fails, instead of ploughing on and
+#      reporting success. Conditions of if/while and operands of &&/|| are
+#      exempt, so the `if ! hash foo` guards below still work.
+# -E   propagate the ERR trap into functions and subshells.
+# -u   treat use of an unset variable as an error.
+# -o pipefail  a pipeline fails if ANY stage fails, not just the last one;
+#      without it `flatpak list | grep -q` would hide a flatpak failure.
+set -Eeuo pipefail
+trap 'printf "\n!!! FAILED at line %s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
+
 function log() {
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }
@@ -22,11 +36,44 @@ log "\nBEGIN INSTALL SCRIPT\n"
 
         log "COPR repos enabled!"
 
+        log "Configuring third-party dnf repos..."
+
+        # RPM Fusion ships as release rpms rather than a repo file. It provides
+        # the nvidia driver, steam and freeworld codec packages below, and also
+        # drops in the nvidia-driver and steam sub-repos.
+        sudo dnf install -y \
+            "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+            "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+
+        # google-chrome.repo ships with fedora-workstation-repositories but is
+        # disabled by default.
+        sudo dnf install -y fedora-workstation-repositories
+        sudo dnf config-manager setopt google-chrome.enabled=1
+{{ range .packages.fedora.home.repos }}
+        printf '[%s]\nname=%s\nbaseurl=%s\nenabled=1\ngpgcheck=1\ngpgkey=%s\n' \
+            {{ .id | squote }} {{ .name | squote }} {{ .baseurl | squote }} {{ .gpgkey | squote }} \
+            | sudo tee /etc/yum.repos.d/{{ .id }}.repo >/dev/null
+{{ end }}
+        log "Third-party dnf repos configured!"
+
         log "Installing dnf packages..."
 
         sudo dnf install -y {{ range .packages.fedora.home.dnfs }}{{ . | quote }} {{ end }}
 
         log "Dnf packages installed!"
+{{ if .packages.fedora.home.manual_rpms }}
+        # These publish no repo, so dnf cannot resolve them by name. Listing
+        # them in `dnfs` would abort the entire transaction above.
+        log "Reminder: install these by hand from a downloaded rpm"
+        {{ range .packages.fedora.home.manual_rpms }}
+            if ! rpm -q {{ . | quote }} &>/dev/null; then
+                printf "  MISSING: %s\n" {{ . | quote }}
+            else
+                printf "  present: %s\n" {{ . | quote }}
+            fi
+        {{ end }}
+        echo
+{{ end }}
 
         # This list must contain applications only. Explicitly installing a
         # runtime makes flatpak auto-pin it (see flatpak-pin(1)), and pins are

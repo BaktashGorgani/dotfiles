@@ -1,5 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 # vim: filetype=sh
+
+# See run_onchange_install-packages.sh.tmpl for why these are set. Fail fast
+# and report the failing line rather than printing "... updated!" regardless.
+set -Eeuo pipefail
+trap 'printf "\n!!! FAILED at line %s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
+
 function log() {
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }

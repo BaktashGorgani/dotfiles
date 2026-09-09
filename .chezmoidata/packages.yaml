@@ -87,6 +87,45 @@ packages:
       - 'zsh'
   fedora:
     home:
+      # Third-party repos required by entries in `dnfs`, written to
+      # /etc/yum.repos.d/<id>.repo before the install transaction. dnf aborts
+      # the entire transaction if any argument cannot be resolved, so these
+      # must exist first. RPM Fusion and google-chrome are handled separately
+      # in the script: the former ships as release rpms, the latter comes
+      # from fedora-workstation-repositories and only needs enabling.
+      repos:
+        - id: 'charm'
+          name: 'Charm'
+          baseurl: 'https://repo.charm.sh/yum/'
+          gpgkey: 'https://repo.charm.sh/yum/gpg.key'
+        - id: 'docker-ce-stable'
+          name: 'Docker CE Stable - $basearch'
+          baseurl: 'https://download.docker.com/linux/fedora/$releasever/$basearch/stable'
+          gpgkey: 'https://download.docker.com/linux/fedora/gpg'
+        - id: 'gh-cli'
+          name: 'packages for the GitHub CLI'
+          baseurl: 'https://cli.github.com/packages/rpm'
+          gpgkey: 'https://cli.github.com/packages/rpm/gpg.key'
+        - id: 'PlexRepo'
+          name: 'PlexRepo'
+          baseurl: 'https://downloads.plex.tv/repo/rpm/$basearch/'
+          gpgkey: 'https://downloads.plex.tv/plex-keys/PlexSign.key'
+        - id: 'sublime-text'
+          name: 'Sublime Text'
+          baseurl: 'https://download.sublimetext.com/rpm/stable/x86_64'
+          gpgkey: 'https://download.sublimetext.com/sublimehq-rpm-pub.gpg'
+        - id: 'warpdotdev'
+          name: 'warpdotdev'
+          baseurl: 'https://releases.warp.dev/linux/rpm/stable'
+          gpgkey: 'https://releases.warp.dev/linux/keys/warp.asc'
+      # Installed from downloaded rpms because upstream publishes no repo.
+      # Deliberately NOT in `dnfs`: dnf cannot resolve them by name, and one
+      # unresolvable argument fails the whole transaction. Listed here so the
+      # script can remind you to reinstall them by hand.
+      manual_rpms:
+        - 'cisco-secure-client-vpn'
+        - 'webex'
+        - 'zoom'
       dnfs:
         - 'aajohan-comfortaa-fonts'
         - 'abrt-cli'
@@ -132,7 +171,6 @@ packages:
         - 'chrony'
         - 'cifs-utils'
         - 'cirrus-audio-firmware'
-        - 'cisco-secure-client-vpn'
         - 'clang'
         - 'clean-rpm-gpg-pubkey'
         - 'cloc'
@@ -507,7 +545,6 @@ packages:
         - 'warp-terminal'
         - 'waybar'
         - 'wayland-devel'
-        - 'webex'
         - 'wev'
         - 'wget2-wget'
         - 'which'
@@ -529,7 +566,6 @@ packages:
         - 'xorg-x11-server-Xwayland'
         - 'yq'
         - 'zip'
-        - 'zoom'
         - 'zram-generator-defaults'
         - 'zsh'
       # Applications only. Runtimes, GL/VAAPI extensions and themes are pulled in
