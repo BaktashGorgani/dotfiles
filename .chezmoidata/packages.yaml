@@ -6,10 +6,14 @@ packages:
     - 'syncat'
   git_crates:
     - 'https://github.com/Linus789/wl-clip-persist'
+  # Prefer bare (homebrew/core) names over tap-qualified ones. Homebrew 6
+  # requires third-party taps to be trusted and only warns when they are not,
+  # so an untrusted tap formula is silently skipped and silently stops
+  # updating.
   brews:
     - 'gemini-cli'
-    - 'jandedobbeleer/oh-my-posh/oh-my-posh'
     - 'lazygit'
+    - 'oh-my-posh'
     - 'xxh'
     - 'yq'
   tpms:

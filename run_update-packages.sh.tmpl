@@ -67,7 +67,10 @@ log "\nBEGIN UPDATE SCRIPT\n"
 {{ end }}
 log "Updating Homebrew packages..."
 
-brew update && brew upgrade
+# -y: brew asks "Do you want to proceed with the upgrade?" and stdin is not a
+# terminal here, so without it the run depends on how brew handles a closed
+# prompt rather than on an explicit answer.
+brew update && brew upgrade -y
 
 log "Homebrew packages updated!"
 

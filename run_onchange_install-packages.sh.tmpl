@@ -114,9 +114,18 @@ fi
 
 log "Installing Homebrew packages..."
 {{ range .packages.brews }}
+{{- if contains "/" . }}
+    # Homebrew 6 refuses to load formulae from untrusted third-party taps and
+    # merely warns, so an untrusted formula is silently skipped and pinned at
+    # whatever version it was. Trust the individual formula rather than the
+    # whole tap, which brew recommends since whole-tap trust also covers every
+    # future formula, cask and command the tap ever adds.
+    brew trust --formula {{ . | quote }}
+{{- end }}
     if ! brew list {{ . }} &> /dev/null; then
         printf "\nInstalling {{ . }}...\n"
-        brew install {{ . }}
+        # -y: brew prompts for confirmation, and stdin is not a terminal here.
+        brew install -y {{ . }}
     else
         printf "\n{{ . }} already installed!\n"
     fi
