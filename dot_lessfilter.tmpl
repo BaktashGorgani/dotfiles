@@ -15,7 +15,7 @@ kind=${mime##*/}
 ext=${1##*.}
 if [ "$kind" = octet-stream ]; then
 	if [[ $1 == *events.out.tfevents.* ]]; then
-		python <<EOF
+		python - "$1" <<'EOF'
 from contextlib import suppress
 import sys
 from time import gmtime, strftime
@@ -26,7 +26,7 @@ from tensorboard.backend.event_processing.event_file_loader import (
     EventFileLoader,
 )
 
-file = "$1"
+file = sys.argv[1]
 df = pd.DataFrame(columns=["Step", "Value"])
 df.index.name = "YYYY-mm-dd HH:MM:SS"
 
@@ -45,20 +45,22 @@ plt.show()
 df.to_csv(sys.stdout, "\t")
 EOF
 	elif [[ $(basename "$1") == data.mdb ]]; then
-		python <<EOF
+		python - "$1" <<'EOF'
+import sys
 from os.path import dirname as dirn
 import lmdb
 
-with lmdb.open(dirn("$1")) as env, env.begin() as txn:
+with lmdb.open(dirn(sys.argv[1])) as env, env.begin() as txn:
     for key, val in txn.cursor():
         print(key.decode())
 EOF
 	fi
 elif [ "$kind" = zip ] && [ "$ext" = pth ]; then
-	python <<EOF
+	python - "$1" <<'EOF'
+import sys
 import torch
 
-data = torch.load("$1")
+data = torch.load(sys.argv[1])
 if isinstance(data, torch.Tensor):
     print(data.shape)
 print(data)
@@ -117,7 +119,7 @@ elif [ "$category" = text ]; then
     fi
 else
     {{ if eq .chezmoi.os "darwin" }}
-        "|$HOMEBREW_PREFIX/bin/lesspipe.sh $1" | bat --color=always
+        lesspipe.sh "$1" | bat --color=always
     {{ else if eq .chezmoi.os "linux" }}
             {{ if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
                 lesspipe.sh "$1" | bat --color=always
