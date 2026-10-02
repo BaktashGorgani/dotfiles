@@ -1,3 +1,17 @@
 .oh-my-zsh/cache/
 key.txt.age
 .config/hypr/hypr-backups/
+README*
+
+{{ if ne .chezmoi.os "linux" }}
+# Wayland / systemd desktop setup and its helpers only make sense on Linux.
+.config/hypr
+.config/sway
+.config/waybar
+.config/rofi
+.config/dunst
+.config/wlogout
+.config/systemd
+.config/mimeapps.list
+.local/bin/activity-watch-*
+{{ end }}
