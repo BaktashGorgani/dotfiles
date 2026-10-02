@@ -64,7 +64,18 @@ if [ -f $HOME/.secret_aliases ]; then
     . $HOME/.secret_aliases
 fi
 
-. /usr/share/git-core/contrib/completion/git-prompt.sh
+for git_prompt in \
+    /usr/share/git-core/contrib/completion/git-prompt.sh \
+    /Library/Developer/CommandLineTools/usr/share/git-core/git-prompt.sh \
+    /opt/homebrew/etc/bash_completion.d/git-prompt.sh; do
+    if [ -f "$git_prompt" ]; then
+        . "$git_prompt"
+        break
+    fi
+done
+unset git_prompt
+# PS1 calls __git_ps1 unconditionally; keep it quiet if no git-prompt was found.
+declare -F __git_ps1 &>/dev/null || __git_ps1() { :; }
 #export PS1='[\u@\h \W$(declare -F __git_ps1 &>/dev/null && __git_ps1 " (%s)")]\$ '
 
 function nonzero_return() {
@@ -198,7 +209,14 @@ export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 [ -f "$HOME"/.fzf.bash ] && source "$HOME"/.fzf.bash
 
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
-eval "$(gh copilot alias -- bash)"
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+command -v gh &>/dev/null && eval "$(gh copilot alias -- bash 2>/dev/null)"
+
+for brew_bin in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+    if [ -x "$brew_bin" ]; then
+        eval "$("$brew_bin" shellenv)"
+        break
+    fi
+done
+unset brew_bin

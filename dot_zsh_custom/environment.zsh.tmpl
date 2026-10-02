@@ -4,23 +4,18 @@ export EDITOR=nvim
 export VISUAL=nvim
 export SUDO_EDITOR=nvim
 export BAT_THEME="OneHalfDark"
-export XCURSOR_THEME="material_cursors"
-export XCURSOR_SIZE="32"
-export XDG_DATA_DIRS="/var/lib/flatpak/exports/share:/home/baky/.local/share/flatpak/exports/share:$XDG_DATA_DIRS"
 
 {{ if eq .chezmoi.os "linux" }}
-    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-    # fnm
-    FNM_PATH="/home/baky/.local/share/fnm"
-    if [ -d "$FNM_PATH" ]; then
-      export PATH="$FNM_PATH:$PATH"
-      eval "`fnm env`"
-    fi
-
-    # Fix for tmux on WSL2 OpenSuse Tumbleweed
-    export TMUX_TMPDIR='/tmp'
-    {{ end -}}
+    export XCURSOR_THEME="material_cursors"
+    export XCURSOR_SIZE="32"
+    export XDG_DATA_DIRS="/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share:$XDG_DATA_DIRS"
 {{ end -}}
 
+{{ if eq .chezmoi.os "darwin" -}}
+# BSD sed does not understand \x escapes, so strip the overstrike formatting
+# with col instead.
+export MANPAGER="sh -c 'col -bx | bat -p -lman'"
+{{ else -}}
 export MANPAGER="sh -c 'sed -u -e \"s/\\x1B\[[0-9;]*m//g; s/.\\x08//g\" | bat -p -lman'"
+{{ end -}}
 export LESSUTFCHARDEF=E000-F8FF:p,F0000-FFFFD:p,100000-10FFFD:p
