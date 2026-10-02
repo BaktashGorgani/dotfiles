@@ -19,7 +19,13 @@ alias fcd='`__fzf_cd__`'
 alias fb='fz --bind "enter:become(bat {})"'
 alias pgl="git log --color=always --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)'"
 alias pggl="pgl --graph"
-alias disks="gdu -d"
+# Homebrew installs gdu as gdu-go on macOS, where plain gdu would clash with
+# GNU du from coreutils.
+if (( $+commands[gdu-go] )); then
+    alias disks="gdu-go -d"
+else
+    alias disks="gdu -d"
+fi
 
 
 # enable color support of ls and also add handy aliases
