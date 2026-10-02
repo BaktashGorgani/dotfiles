@@ -18,17 +18,23 @@ function log() {
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }
 
+# Put an existing Homebrew on PATH. This script runs in a non-login shell that
+# never sources ~/.zprofile, so brew can be installed yet invisible here.
+function brew_shellenv() {
+    local candidate
+    for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+        if [[ -x "$candidate" ]]; then
+            eval "$("$candidate" shellenv)"
+            return 0
+        fi
+    done
+    return 1
+}
+
 log "\nBEGIN INSTALL SCRIPT\n"
 
 {{ if eq .chezmoi.os "linux" }}
-    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-        log "Installing zypper packages..."
-
-        ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-        $ZYPPER_NON_INTERACTIVE install {{ range .packages.wsl_opensuse_tumbleweed.zyppers }}{{ . | quote }} {{ end }}
-
-        log "Zypper packages installed!"
-    {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+    {{ if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
         log "Enabling required COPR repos..."
 
         sudo dnf copr enable -y sdegler/hyprland
@@ -102,6 +108,8 @@ log "\nBEGIN INSTALL SCRIPT\n"
 {{ end }}
 log "Checking for Homebrew..."
 
+brew_shellenv || true
+
 if hash brew &>/dev/null; then
     log "Homebrew already installed!"
 else
@@ -109,9 +117,42 @@ else
 
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+    if ! brew_shellenv; then
+        printf "\n!!! Homebrew installed but brew was not found afterwards\n" >&2
+        exit 1
+    fi
+
     log "Homebrew installed!"
 fi
+{{ if eq .chezmoi.os "darwin" }}
+log "Installing macOS Homebrew formulae..."
+{{ range .packages.macos.brews }}
+    if ! brew list --formula {{ . | quote }} &> /dev/null; then
+        printf "\nInstalling {{ . }}...\n"
+        brew install -y {{ . | quote }}
+    else
+        printf "\n{{ . }} already installed!\n"
+    fi
+{{ end }}
+echo
+log "macOS Homebrew formulae installed!"
 
+log "Installing macOS casks..."
+{{ range .packages.macos.casks }}
+    if brew list --cask {{ .name | quote }} &> /dev/null; then
+        printf "\n{{ .name }} already installed!\n"
+{{- if index . "app" }}
+    elif [[ -d "/Applications/{{ .app }}" ]]; then
+        printf "\n{{ .name }}: /Applications/{{ .app }} already exists outside Homebrew; skipping.\n"
+{{- end }}
+    else
+        printf "\nInstalling {{ .name }}...\n"
+        brew install -y --cask {{ .name | quote }}
+    fi
+{{ end }}
+echo
+log "macOS casks installed!"
+{{ end }}
 log "Installing Homebrew packages..."
 {{ range .packages.brews }}
 {{- if contains "/" . }}
@@ -178,11 +219,12 @@ else
 
     # --locked honours each crate's committed Cargo.lock; without it cargo
     # resolves to latest compatible deps, which breaks crates whose deps have
-    # shipped semver-incompatible changes (e.g. eza -> palette/palette_derive).
+    # shipped semver-incompatible changes (this once broke eza, which now comes
+    # from Homebrew instead).
     cargo install --locked {{ range .packages.crates }}{{ . | quote }} {{ end }}
 
     log "Rust packages installed!"
-
+{{ if eq .chezmoi.os "linux" }}
     log "Installing Rust packages from git..."
     {{ range .packages.git_crates }}
         if ! cargo install --list | grep -q "^{{ base . }} "; then
@@ -194,24 +236,13 @@ else
     {{ end }}
     echo
     log "Rust git packages installed!"
+{{ end }}
 
     log "Installing Rust-Analyzer"
 
     rustup component add rust-analyzer
 
     log "Rust-Analyzer installed!"
-fi
-
-log "Checking for zoxide..."
-
-if hash zoxide &>/dev/null; then
-    log "Zoxide already installed!"
-else
-    log "Zoxide not found, installing..."
-
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-
-    log "Zoxide installed!"
 fi
 
 log "\nEND INSTALL SCRIPT\n"

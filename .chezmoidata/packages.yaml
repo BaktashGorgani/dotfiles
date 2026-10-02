@@ -2,93 +2,66 @@ packages:
   crates:
     - 'cargo-cache'
     - 'cargo-update'
-    - 'eza'
     - 'syncat'
+  # Linux only: wl-clip-persist is Wayland-specific and does not build on macOS.
   git_crates:
     - 'https://github.com/Linus789/wl-clip-persist'
   # Prefer bare (homebrew/core) names over tap-qualified ones. Homebrew 6
   # requires third-party taps to be trusted and only warns when they are not,
   # so an untrusted tap formula is silently skipped and silently stops
   # updating.
+  #
+  # Installed through Homebrew on every OS, so a tool only needs listing once.
+  # Put a tool here when it has a Homebrew formula with Linux and macOS bottles
+  # and the Fedora machine has no distro package for it.
   brews:
+    - 'chafa'
+    - 'eza'
     - 'gemini-cli'
     - 'lazygit'
+    - 'lesspipe'
     - 'oh-my-posh'
+    - 'ripgrep'
+    - 'tmux'
     - 'xxh'
     - 'yq'
+    - 'zoxide'
+  # macOS only. These tools are installed by dnf on the Fedora machine (see
+  # `fedora` below), so they stay distro-managed there rather than being
+  # duplicated or shadowed by Homebrew.
+  macos:
+    brews:
+      - 'age'
+      - 'bat'
+      - 'catimg'
+      - 'chezmoi'
+      - 'cmake'
+      - 'fzf'
+      - 'gdu'
+      - 'gh'
+      - 'git-delta'
+      - 'neovim'
+      # openssl-sys (cargo-update, syncat) needs these to build.
+      - 'openssl@3'
+      - 'pkgconf'
+      - 'tree'
+    # `app` is the bundle in /Applications. If it already exists (installed by
+    # hand, not via Homebrew) the cask is skipped instead of failing on the
+    # existing app. Omit `app` for casks with no application bundle, e.g. fonts.
+    casks:
+      - name: 'kitty'
+        app: 'kitty.app'
+      - name: 'google-chrome'
+        app: 'Google Chrome.app'
+      - name: 'warp'
+        app: 'Warp.app'
+      - name: 'font-monofur-nerd-font'
   tpms:
     - 'tmux-sensible'
     - 'tmux-yank'
     - 'tmux-resurrect'
     - 'tmux-continuum'
     - 'tmux-floax'
-  wsl_opensuse_tumbleweed:
-    zyppers:
-      - 'aaa_base-extras'
-      - 'aaa_base-wsl'
-      - 'age'
-      - 'bash-completion'
-      - 'bat'
-      - 'bind-utils'
-      - 'bzip2'
-      - 'ca-certificates'
-      - 'ca-certificates-mozilla'
-      - 'chezmoi'
-      - 'cnf'
-      - 'dos2unix'
-      - 'filesystem'
-      - 'fzf'
-      - 'gcc'
-      - 'gcc-c++'
-      - 'gh'
-      - 'git'
-      - 'git-delta'
-      - 'glibc'
-      - 'gopls'
-      - 'gum'
-      - 'gum-bash-completion'
-      - 'iputils'
-      - 'joe'
-      - 'less'
-      - 'libyui-ncurses-pkg16'
-      - 'lsof'
-      - 'lua-language-server'
-      - 'make'
-      - 'man'
-      - 'neovim'
-      - 'openssh'
-      - 'openssl-devel'
-      - 'openSUSE-build-key'
-      - 'openSUSE-release'
-      - 'openSUSE-release-appliance-wsl'
-      - 'pam-config'
-      - 'patterns-base-minimal_base'
-      - 'procps'
-      - 'python311'
-      - 'python311-neovim'
-      - 'python311-pip'
-      - 'python311-pipx'
-      - 'ripgrep'
-      - 'rpm'
-      - 'screen'
-      - 'sshpass'
-      - 'sudo'
-      - 'system-user-nobody'
-      - 'tcpdump'
-      - 'terminfo'
-      - 'timezone'
-      - 'tmux'
-      - 'traceroute'
-      - 'tree'
-      - 'vim'
-      - 'vim-data'
-      - 'wget'
-      - 'yast2-firstboot'
-      - 'yast2-firstboot-wsl'
-      - 'yast2-packager'
-      - 'yq'
-      - 'zip'
-      - 'zsh'
   fedora:
     home:
       # Third-party repos required by entries in `dnfs`, written to
