@@ -1,6 +1,10 @@
 #!/bin/bash
 # vim: filetype=sh
 
+# Installed to ~/.local/bin/update-packages and run on demand (see the `cur`
+# alias). It is deliberately NOT a chezmoi run_ script: that would upgrade
+# every package manager on every `chezmoi apply`, including the first one.
+
 # See run_onchange_install-packages.sh.tmpl for why these are set. Fail fast
 # and report the failing line rather than printing "... updated!" regardless.
 set -Eeuo pipefail
@@ -10,17 +14,24 @@ function log() {
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }
 
+# Make sure brew is on PATH even when this is run from a non-login shell.
+function brew_shellenv() {
+    local candidate
+    for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+        if [[ -x "$candidate" ]]; then
+            eval "$("$candidate" shellenv)"
+            return 0
+        fi
+    done
+    return 1
+}
+
+brew_shellenv || true
+
 log "\nBEGIN UPDATE SCRIPT\n"
 
 {{ if eq .chezmoi.os "linux" }}
-    {{ if (and (contains "WSL" .chezmoi.kernel.osrelease) (eq .chezmoi.osRelease.id "opensuse-tumbleweed")) }}
-        log "Updating zypper packages..."
-
-        ZYPPER_NON_INTERACTIVE="sudo zypper --non-interactive --gpg-auto-import-keys"
-        $ZYPPER_NON_INTERACTIVE update
-
-        log "Zypper packages updated!"
-    {{ else if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+    {{ if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
         log "Updating dnf packages..."
 
         sudo dnf update -y

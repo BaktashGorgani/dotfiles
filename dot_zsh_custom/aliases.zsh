@@ -52,5 +52,6 @@ alias wallpaper='$HOME/git/bing_wallpaper/bing_wallpaper_optimized'
 # lazygit
 alias lg='lazygit'
 
-# chezmoi update and refresh
-alias cur='chezmoi update --refresh-externals'
+# chezmoi update and refresh, then upgrade packages (update-packages is no
+# longer run automatically by chezmoi apply)
+alias cur='chezmoi update --refresh-externals && update-packages'
