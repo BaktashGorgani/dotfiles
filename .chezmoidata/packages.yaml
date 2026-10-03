@@ -23,6 +23,8 @@ packages:
     - 'oh-my-posh'
     - 'ripgrep'
     - 'tmux'
+    # nvim-treesitter (main branch) builds its parsers with the tree-sitter CLI.
+    - 'tree-sitter-cli'
     - 'xxh'
     - 'yq'
     - 'zoxide'
