@@ -42,6 +42,8 @@ packages:
       - 'gdu'
       - 'gh'
       - 'git-delta'
+      # Mason installs gopls with `go install`, so neovim needs the toolchain.
+      - 'go'
       - 'neovim'
       # openssl-sys (cargo-update, syncat) needs these to build.
       - 'openssl@3'
