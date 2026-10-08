@@ -13,11 +13,13 @@ packages:
   #
   # Installed through Homebrew on every OS, so a tool only needs listing once.
   # Put a tool here when it has a Homebrew formula with Linux and macOS bottles
-  # and the Fedora machine has no distro package for it.
+  # and no distro package explicitly installs it on the Fedora machine.
   brews:
     - 'chafa'
     - 'eza'
     - 'gemini-cli'
+    # Mason installs gopls with `go install`, so neovim needs the toolchain.
+    - 'go'
     - 'lazygit'
     - 'lesspipe'
     - 'oh-my-posh'
@@ -42,8 +44,6 @@ packages:
       - 'gdu'
       - 'gh'
       - 'git-delta'
-      # Mason installs gopls with `go install`, so neovim needs the toolchain.
-      - 'go'
       - 'neovim'
       # openssl-sys (cargo-update, syncat) needs these to build.
       - 'openssl@3'
