@@ -25,6 +25,9 @@ hl.workspace_rule({ workspace = "3", monitor = "HDMI-A-1" })
 
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
+hl.env("LIBVA_DRIVER_NAME", "nvidia")
+hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+
 hl.env("HYPRCURSOR_THEME", "material_cursors")
 hl.env("HYPRCURSOR_SIZE", "32")
 
