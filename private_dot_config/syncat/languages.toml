@@ -132,12 +132,14 @@ extensions = ["md"]
 
 [ocaml]
 source = "https://github.com/tree-sitter/tree-sitter-ocaml"
+path = "grammars/ocaml"
 name = "ocaml"
 library = "tree-sitter-ocaml"
 extensions = ["ocaml", "ml", "mli"]
 
 [php]
 source = "https://github.com/tree-sitter/tree-sitter-php"
+path = "php"
 name = "php"
 library = "tree-sitter-php"
 extensions = ["php"]
@@ -228,3 +230,25 @@ source = "https://github.com/ikatyang/tree-sitter-yaml"
 name = "yaml"
 library = "tree-sitter-yaml"
 extensions = ["yaml", "yml"]
+
+# syncat compiles every C/C++ file in src, including this helper that scanner.cc
+# already includes. Inline its function to avoid duplicate linker definitions,
+# and include cstdint so the helper also compiles as a standalone source file.
+# Keep the patch idempotent because syncat reapplies prebuild on every install.
+[[yaml.prebuild]]
+command = "python3"
+args = ["-c", '''
+from pathlib import Path
+
+path = Path("src/schema.generated.cc")
+source = path.read_text()
+if "#include <cstdint>" not in source:
+    source = "#include <cstdint>\n" + source
+source = source.replace(
+    "\nint8_t adv_sch_stt(",
+    "\ninline int8_t adv_sch_stt(",
+)
+if "\ninline int8_t adv_sch_stt(" not in source:
+    raise SystemExit("Unexpected YAML schema: cannot apply syncat build fix")
+path.write_text(source)
+''']

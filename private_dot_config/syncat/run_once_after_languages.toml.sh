@@ -1,6 +1,9 @@
 #!/bin/sh
 # vim: filetype=sh
-function log() {
+
+set -eu
+
+log() {
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }
 
@@ -10,6 +13,10 @@ function log() {
 
 log "Installing tree-sitter languages"
 
-syncat install
+syncat install || {
+    status=$?
+    printf 'Tree-sitter language installation failed (exit %s).\n' "$status" >&2
+    exit "$status"
+}
 
 log "Tree-sitter languages installed!"
