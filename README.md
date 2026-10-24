@@ -31,6 +31,7 @@ chezmoi init --apply BaktashGorgani
 
 ## Updating packages
 
-Package upgrades are not part of `chezmoi apply`. Run `update-packages`, or the
-`cur` alias, which runs `chezmoi update --refresh-externals` and then
-`update-packages`.
+Package upgrades run automatically on every `chezmoi apply`, including the
+apply performed by `chezmoi update --refresh-externals`. Use the `cur` alias
+to pull the dotfiles, refresh externals, apply the configuration, and run
+package updates.

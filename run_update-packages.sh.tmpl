@@ -1,9 +1,8 @@
 #!/bin/bash
 # vim: filetype=sh
 
-# Installed to ~/.local/bin/update-packages and run on demand (see the `cur`
-# alias). It is deliberately NOT a chezmoi run_ script: that would upgrade
-# every package manager on every `chezmoi apply`, including the first one.
+# Run package updates on every chezmoi apply, including when invoked through
+# chezmoi update --refresh-externals (the `cur` alias).
 
 # See run_onchange_install-packages.sh.tmpl for why these are set. Fail fast
 # and report the failing line rather than printing "... updated!" regardless.
