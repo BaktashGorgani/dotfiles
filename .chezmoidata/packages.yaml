@@ -1,4 +1,9 @@
 packages:
+  # Standalone CLIs only; Neovim language servers (including Jedi) use Mason.
+  pipxs:
+    - 'git-filter-repo'
+    - 'isort'
+    - 'mypy'
   crates:
     - 'cargo-cache'
     - 'cargo-update'
@@ -47,7 +52,9 @@ packages:
       - 'neovim'
       # openssl-sys (cargo-update, syncat) needs these to build.
       - 'openssl@3'
+      - 'pipx'
       - 'pkgconf'
+      - 'python'
       - 'tree'
     # `app` is the bundle in /Applications. If it already exists (installed by
     # hand, not via Homebrew) the cask is skipped instead of failing on the

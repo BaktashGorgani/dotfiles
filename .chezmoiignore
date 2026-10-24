@@ -2,6 +2,7 @@
 key.txt.age
 .config/hypr/hypr-backups/
 README*
+tests
 
 {{ if ne .chezmoi.os "linux" }}
 # Wayland / systemd desktop setup and its helpers only make sense on Linux.

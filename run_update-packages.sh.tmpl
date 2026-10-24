@@ -104,6 +104,13 @@ brew autoremove
 brew cleanup --prune=all
 
 log "Homebrew cleaned up!"
+{{ template "pipx-maintenance.sh" . }}
+
+log "Repairing and updating pipx packages..."
+
+maintain_pipx update {{ range .packages.pipxs }}{{ . | quote }} {{ end }}
+
+log "Pipx packages updated and verified!"
 
 log "Updating TPM Plugins..."
 
@@ -127,6 +134,16 @@ log "Updating Neovim plugins..."
 nvim --headless "+Lazy! sync" -c "lua local failed = {}; for name, plugin in pairs(require('lazy.core.config').plugins) do for _, task in ipairs(plugin._.tasks or {}) do if task:has_errors() then table.insert(failed, name) end end end; if #failed > 0 then vim.api.nvim_err_writeln('Lazy sync failed for: ' .. table.concat(failed, ', ')); vim.cmd('cquit 1') end" -c "qa"
 
 log "Neovim plugins updated!"
+
+log "Checking Mason Jedi..."
+
+# Embed the helper so this works before/without applying a separate helper file.
+nvim --headless -c "$(cat <<'LUA'
+lua {{ template "mason-jedi.lua" . }}
+LUA
+)" -c "qa"
+
+log "Mason Jedi verified!"
 
 log "Updating Treesitter parsers..."
 

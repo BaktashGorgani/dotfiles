@@ -177,6 +177,13 @@ log "Installing Homebrew packages..."
 {{ end }}
 echo
 log "Homebrew packages installed!"
+{{ template "pipx-maintenance.sh" . }}
+
+log "Installing and checking pipx packages..."
+
+maintain_pipx install {{ range .packages.pipxs }}{{ . | quote }} {{ end }}
+
+log "Pipx packages installed and verified!"
 
 log "Installing TPM plugins..."
 {{ range .packages.tpms }}
