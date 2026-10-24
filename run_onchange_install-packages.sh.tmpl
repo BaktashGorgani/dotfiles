@@ -56,9 +56,13 @@ log "\nBEGIN INSTALL SCRIPT\n"
         sudo dnf install -y fedora-workstation-repositories
         sudo dnf config-manager setopt google-chrome.enabled=1
 {{ range .packages.fedora.home.repos }}
-        printf '[%s]\nname=%s\nbaseurl=%s\nenabled=1\ngpgcheck=1\ngpgkey=%s\n' \
-            {{ .id | squote }} {{ .name | squote }} {{ .baseurl | squote }} {{ .gpgkey | squote }} \
-            | sudo tee /etc/yum.repos.d/{{ .id }}.repo >/dev/null
+        {
+            printf '[%s]\nname=%s\nbaseurl=%s\nenabled=1\ngpgcheck=1\ngpgkey=%s\n' \
+                {{ .id | squote }} {{ .name | squote }} {{ .baseurl | squote }} {{ .gpgkey | squote }}
+{{ if hasKey . "repo_gpgcheck" }}
+            printf 'repo_gpgcheck=%s\n' {{ .repo_gpgcheck | toString | squote }}
+{{ end }}
+        } | sudo tee /etc/yum.repos.d/{{ .id }}.repo >/dev/null
 {{ end }}
         log "Third-party dnf repos configured!"
 

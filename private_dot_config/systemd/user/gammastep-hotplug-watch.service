@@ -1,0 +1,14 @@
+[Unit]
+Description=Restart gammastep when a monitor is (re)connected
+PartOf=graphical-session.target
+After=graphical-session.target gammastep.service
+Requisite=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/hypr/scripts/gammastep_hotplug_watch.bash
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

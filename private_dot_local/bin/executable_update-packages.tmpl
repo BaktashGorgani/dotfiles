@@ -11,6 +11,17 @@ set -Eeuo pipefail
 trap 'printf "\n!!! FAILED at line %s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 function log() {
+    # If stdout is a real terminal, ask it for the cursor's actual column via
+    # a Cursor Position Report (CSI 6n) and only prepend a newline when the
+    # cursor isn't already at column 1 (e.g. after nvim's headless output,
+    # which doesn't end in a newline). `-t 0.2` + `|| true` keep this a no-op
+    # (identical to the original behavior) if it's not a terminal or the
+    # terminal doesn't answer in time, so this can never hang or trip `set -e`.
+    if [[ -t 1 && -t 0 ]]; then
+        local esc row col
+        IFS='[;' read -s -d R -t 0.2 -p $'\e[6n' esc row col || true
+        [[ -n "$col" && "$col" != "1" ]] && printf "\n"
+    fi
     printf "%0.s*" {1..50}; printf "\n$1\n"; printf "%0.s*" {1..50};echo
 }
 
@@ -105,6 +116,34 @@ log "TPM plugins updated!"
 # rather than declared with @plugin, so tpm treats it as foreign and deletes it.
 # chezmoi would then restore it on the next apply, causing it to be churned on
 # every update.
+
+log "Updating Neovim plugins..."
+
+# `Lazy! sync` is the blocking form (install + clean + update). Without the
+# bang, lazy schedules the work asynchronously and --headless quits before it
+# runs. Like nvim-treesitter, lazy never sets a non-zero exit code on
+# failure, so scan every plugin's tasks for one that ended in error and
+# `cquit` if any did, rather than silently printing "updated!" regardless.
+nvim --headless "+Lazy! sync" -c "lua local failed = {}; for name, plugin in pairs(require('lazy.core.config').plugins) do for _, task in ipairs(plugin._.tasks or {}) do if task:has_errors() then table.insert(failed, name) end end end; if #failed > 0 then vim.api.nvim_err_writeln('Lazy sync failed for: ' .. table.concat(failed, ', ')); vim.cmd('cquit 1') end" -c "qa"
+
+log "Neovim plugins updated!"
+
+log "Updating Treesitter parsers..."
+
+# nvim-treesitter's `build = ":TSUpdate"` hook only reruns when lazy pulls a
+# new nvim-treesitter commit, not when only a language parser has a new
+# release, so parsers can go stale silently otherwise. Run it explicitly every
+# time to keep them current.
+#
+# `:TSUpdateSync` no longer exists (removed by nvim-treesitter's v3 rewrite)
+# and plain `:TSUpdate` only schedules the update asynchronously, so a
+# headless `+TSUpdate +qa` would quit before it finishes. Call the async task
+# directly and block on it with `:wait()` instead, same as above. `cquit` on
+# error so a real failure trips `set -e` above rather than silently printing
+# "updated!" regardless, like every other command in this script.
+nvim --headless -c "lua local ok, err = pcall(function() require('nvim-treesitter.install').update(nil, { summary = true }):wait() end); if not ok then vim.api.nvim_err_writeln(tostring(err)); vim.cmd('cquit 1') end" -c "qa"
+
+log "Treesitter parsers updated!"
 
 log "Updating Rust..."
 
