@@ -1,0 +1,19 @@
+#!/bin/bash
+# vim: filetype=sh
+{{ if eq .chezmoi.os "linux" }}
+{{ if eq .chezmoi.osRelease.id "fedora" }}
+set -euo pipefail
+
+# Embedding the hook makes chezmoi rerun this installer when its contents change.
+hook=$(mktemp)
+trap 'rm -f "$hook"' EXIT
+cat > "$hook" <<'CHEZMOI_BOOT_ENTRIES_HOOK'
+{{ template "fedora-boot-entries.install" . }}
+CHEZMOI_BOOT_ENTRIES_HOOK
+
+sudo install -d -m 0755 /etc/kernel/install.d
+sudo install -o root -g root -m 0755 "$hook" /etc/kernel/install.d/zz-local-boot-entries.install
+sudo restorecon /etc/kernel/install.d/zz-local-boot-entries.install
+sudo /etc/kernel/install.d/zz-local-boot-entries.install refresh
+{{ end }}
+{{ end }}

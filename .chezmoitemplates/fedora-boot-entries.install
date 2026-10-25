@@ -1,0 +1,90 @@
+#!/bin/bash
+# Managed by chezmoi. Run after Fedora's entry generation and validation hooks.
+set -euo pipefail
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+case "${1:-}" in
+    add|refresh) ;;
+    *) exit 0 ;;
+esac
+
+. /etc/os-release
+[[ "$ID" == fedora ]] || exit 0
+[[ "$VERSION_ID" =~ ^[0-9]+$ ]] || exit 0
+read -r machine_id < /etc/machine-id
+[[ "$machine_id" =~ ^[0-9a-f]{32}$ ]] || exit 1
+
+entries=/boot/loader/entries
+archive=/boot/loader/entries-archive
+[[ -d "$entries" ]] || exit 0
+
+exec 9>/run/lock/local-boot-entries.lock
+flock -x 9
+shopt -s nullglob
+
+# Only touch this machine's standard Fedora kernels, not custom/debug entries.
+files=()
+versions=()
+for entry in "$entries/$machine_id-"*.conf; do
+    [[ -f "$entry" && ! -L "$entry" ]] || continue
+    version=${entry##*/"$machine_id-"}
+    version=${version%.conf}
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.fc[0-9]+\.[[:alnum:]_]+$ ]]; then
+        files+=("$entry")
+        versions+=("$version")
+    fi
+done
+[[ ${#versions[@]} -gt 0 ]] || exit 0
+
+# Version order, not mtime or the currently running kernel, determines the keeper.
+latest=$(printf '%s\n' "${versions[@]}" | sort -V | sed -n '$p')
+keep="$entries/$machine_id-$latest.conf"
+
+# Refuse to archive anything unless the retained entry references real images.
+kernel=$(awk '$1 == "linux" { print $2; exit }' "$keep")
+initrd=$(awk '$1 == "initrd" { print $2; exit }' "$keep")
+entry_version=$(awk '$1 == "version" { print $2; exit }' "$keep")
+if [[ "$entry_version" != "$latest" ||
+      "$kernel" != "/vmlinuz-$latest" ||
+      "$initrd" != "/initramfs-$latest.img" ||
+      ! -s "/boot$kernel" || ! -s "/boot$initrd" ]]; then
+    printf 'Boot-entry cleanup skipped: %s has missing or unexpected images/metadata.\n' "$keep" >&2
+    exit 1
+fi
+
+# Keep the first observed contents for this kernel, even on repeated refreshes.
+# Publish the copy only after it succeeds, so a failed copy cannot become a backup.
+originals="$archive/originals"
+original="$originals/${keep##*/}"
+install -d -m 0700 "$archive" "$originals"
+if [[ -L "$original" || ( -e "$original" && ! -f "$original" ) ]]; then
+    printf 'Boot-entry cleanup skipped: unexpected backup path %s.\n' "$original" >&2
+    exit 1
+fi
+if [[ ! -e "$original" ]]; then
+    backup_tmp=$(mktemp "$originals/.backup.XXXXXX")
+    trap 'rm -f -- "$backup_tmp"' EXIT
+    cp -p -- "$keep" "$backup_tmp"
+    mv -T -- "$backup_tmp" "$original"
+    trap - EXIT
+    printf 'Saved original boot entry: %s\n' "$original"
+fi
+
+sed -i "s/^title[[:space:]].*/title Fedora Linux $VERSION_ID ${latest%%-*}/" "$keep"
+
+# Fedora may have made an older, newly reinstalled kernel the default.
+# Point the default at the retained entry before archiving any alternatives.
+grub2-editenv - set "saved_entry=$machine_id-$latest"
+
+rescue="$entries/$machine_id-0-rescue.conf"
+[[ ! -f "$rescue" || -L "$rescue" ]] || files+=("$rescue")
+batch=
+for entry in "${files[@]}"; do
+    [[ "$entry" != "$keep" ]] || continue
+    if [[ -z "$batch" ]]; then
+        install -d -m 0700 "$archive"
+        batch=$(mktemp -d "$archive/$(date -u +%Y%m%dT%H%M%SZ).XXXXXX")
+    fi
+    mv -- "$entry" "$batch/"
+    printf 'Archived boot entry: %s\n' "$batch/${entry##*/}"
+done
