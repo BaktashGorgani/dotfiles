@@ -107,6 +107,40 @@ class BootEntryTests(unittest.TestCase):
         self.assertEqual(first.read_text(), content)
         self.assertTrue((self.entries / f"{MACHINE}-{NEW}.conf").exists())
 
+    def test_reports_original_and_renamed_titles(self):
+        self.entry(NEW)
+        result = self.run_hook()
+        self.assert_success(result)
+        self.assertIn(
+            f"Original boot entry title: Fedora Linux ({NEW}) 44 (Sway)\n"
+            "Renamed boot entry title: Fedora Linux 44 7.2.11\n",
+            result.stdout,
+        )
+
+    def test_refresh_does_not_report_a_rename_when_title_is_unchanged(self):
+        self.entry(NEW)
+        self.assert_success(self.run_hook())
+        result = self.run_hook("refresh")
+        self.assert_success(result)
+        self.assertNotIn("Original boot entry title:", result.stdout)
+        self.assertNotIn("Renamed boot entry title:", result.stdout)
+
+    def test_reports_current_title_instead_of_first_seen_backup_title(self):
+        new = self.entry(NEW)
+        original = new.read_text()
+        self.assert_success(self.run_hook())
+        new.write_text(new.read_text().replace(
+            "title Fedora Linux 44 7.2.11", "title Custom title with 100% battery"
+        ))
+        result = self.run_hook()
+        self.assert_success(result)
+        self.assertIn(
+            "Original boot entry title: Custom title with 100% battery\n",
+            result.stdout,
+        )
+        self.assertIn("Renamed boot entry title: Fedora Linux 44 7.2.11\n", result.stdout)
+        self.assertEqual((self.archive / "originals" / new.name).read_text(), original)
+
     def test_foreign_custom_and_symlink_entries_are_untouched(self):
         self.entry(NEW)
         foreign = self.entry(OLD, machine="b" * 32)

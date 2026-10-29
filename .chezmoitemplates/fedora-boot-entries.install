@@ -70,7 +70,13 @@ if [[ ! -e "$original" ]]; then
     printf 'Saved original boot entry: %s\n' "$original"
 fi
 
-sed -i "s/^title[[:space:]].*/title Fedora Linux $VERSION_ID ${latest%%-*}/" "$keep"
+old_title=$(awk '/^title[[:space:]]/ { sub(/^title[[:space:]]+/, ""); print; exit }' "$keep")
+new_title="Fedora Linux $VERSION_ID ${latest%%-*}"
+if [[ "$old_title" != "$new_title" ]]; then
+    sed -i "s/^title[[:space:]].*/title $new_title/" "$keep"
+    printf 'Original boot entry title: %s\n' "$old_title"
+    printf 'Renamed boot entry title: %s\n' "$new_title"
+fi
 
 # Fedora may have made an older, newly reinstalled kernel the default.
 # Point the default at the retained entry before archiving any alternatives.
