@@ -118,6 +118,7 @@ hl.window_rule({ match = { class = "^(io.missioncenter.MissionCenter)$" },     f
 --
 -- Custom window rules
 --
+hl.window_rule({ match = { class = "^(discord)$" }, workspace = "special:chats silent" })
 hl.window_rule({ match = { class = "^(com.cisco.secureclient.gui)$" }, float = true })                            -- Cisco VPN
 hl.window_rule({ match = { class = "^(com.cisco.secureclient.gui)$" }, workspace = "special:outoftheway" })       -- Cisco VPN
 hl.window_rule({ match = { class = "^(com.cisco.secureclient.gui)$" }, idle_inhibit = "always" })                 -- Cisco VPN

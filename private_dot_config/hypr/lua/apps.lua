@@ -9,6 +9,9 @@ local terminal = "kitty"
 return {
     terminal    = terminal,
     fileManager = "thunar",
+    chrome      = "/usr/bin/google-chrome",
+    warp        = "/usr/bin/warp-terminal",
+    discord     = "/usr/bin/discord",
 
     killRofi = killRofi,
 
