@@ -1,0 +1,144 @@
+#!/bin/bash
+# vim: filetype=sh
+{{ if eq .chezmoi.os "linux" }}
+{{ if eq .chezmoi.osRelease.id "fedora" }}
+set -euo pipefail
+
+if ! rpm -q gdm >/dev/null 2>&1; then
+    printf '%s\n' 'Skipping GDM monitor setup: GDM is not installed.'
+    exit 0
+fi
+
+# Embedding the layout makes changes to it trigger this run-onchange script.
+layout=$(mktemp)
+trap 'rm -f "$layout"' EXIT
+cat > "$layout" <<'CHEZMOI_GDM_MONITORS_XML'
+{{ template "gdm-monitors.xml" . }}
+CHEZMOI_GDM_MONITORS_XML
+
+sudo /usr/bin/python3 - "$layout" <<'CHEZMOI_GDM_MONITORS_PY'
+from pathlib import Path
+import copy
+import datetime
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+
+
+def parse_layout(data):
+    parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+    root = ET.fromstring(data, parser=parser)
+    if root.tag != "monitors" or root.get("version") != "2":
+        raise ValueError("Expected a version 2 monitors.xml; refusing to overwrite")
+    return root
+
+
+def hardware_key(configuration):
+    return sorted(
+        tuple(spec.findtext(field, "")
+              for field in ("connector", "vendor", "product", "serial"))
+        for spec in configuration.findall(".//monitorspec")
+    )
+
+
+def fingerprint(node):
+    text = node.text or ""
+    if node.tag not in ("connector", "vendor", "product", "serial"):
+        text = text.strip()
+    return (
+        node.tag,
+        tuple(sorted(node.attrib.items())),
+        text,
+        tuple(fingerprint(child) for child in node),
+    )
+
+
+def merge_layout(existing, desired):
+    source = parse_layout(desired)
+    configurations = source.findall("configuration")
+    if len(configurations) != 1:
+        raise ValueError("Source must contain exactly one monitor configuration")
+    target = configurations[0]
+    if not hardware_key(target):
+        raise ValueError("Source has no monitor identities")
+    if existing is None:
+        return desired
+
+    root = parse_layout(existing)
+    # Migrate only the exact layout previously generated with Hyprland identities.
+    # Do not discard other monitor combinations or user-modified configurations.
+    obsolete = copy.deepcopy(target)
+    for spec in obsolete.findall(".//monitorspec"):
+        if spec.findtext("connector") == "HDMI-1":
+            spec.find("connector").text = "HDMI-A-1"
+        if spec.findtext("serial") == "3CM04715TD   ":
+            spec.find("serial").text = "3CM04715TD"
+    matches = [
+        config for config in root.findall("configuration")
+        if hardware_key(config) == hardware_key(target)
+        or fingerprint(config) == fingerprint(obsolete)
+    ]
+    if len(matches) == 1 and fingerprint(matches[0]) == fingerprint(target):
+        return None
+    index = list(root).index(matches[0]) if matches else len(root)
+    for config in matches:
+        root.remove(config)
+    root.insert(index, copy.deepcopy(target))
+    ET.indent(root, space="  ")
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n"
+
+
+def main():
+    # GDM 50 gives its dynamic greeter a persistent, seat-specific config home.
+    # Never create or chown these directories: GDM manages their dynamic owner.
+    destination = Path("/var/lib/gdm/seat0/config/monitors.xml")
+    if any(path.is_symlink() for path in (destination, *destination.parents)):
+        raise RuntimeError("Refusing to follow a GDM configuration symlink")
+    if not destination.parent.is_dir():
+        raise RuntimeError("GDM seat0 config directory is absent; start GDM first")
+    desired = Path(sys.argv[1]).read_bytes()
+    existing = destination.read_bytes() if destination.exists() else None
+    result = merge_layout(existing, desired)
+    if result is None:
+        print("GDM monitor layout already matches; no changes.")
+        return
+
+    if existing is not None:
+        stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        backup = destination.with_name(destination.name + ".backup-" + stamp)
+        with backup.open("xb") as output:
+            os.fchmod(output.fileno(), 0o600)
+            os.fchown(output.fileno(), 0, 0)
+            output.write(existing)
+            output.flush()
+            os.fsync(output.fileno())
+        shutil.copystat(destination, backup)
+        os.chmod(backup, 0o600)
+        subprocess.run(["restorecon", str(backup)], check=True)
+        print(f"Previous GDM layout backed up to {backup}")
+
+    fd, temporary = tempfile.mkstemp(prefix=".monitors-", dir=destination.parent)
+    try:
+        with os.fdopen(fd, "wb") as output:
+            # Readable across greeter UID changes; the parent remains 0700.
+            os.fchmod(output.fileno(), 0o644)
+            os.fchown(output.fileno(), 0, 0)
+            output.write(result)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, destination)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    subprocess.run(["restorecon", str(destination)], check=True)
+    print(f"Installed {destination}; GDM was not restarted.")
+
+
+if __name__ == "__main__":
+    main()
+CHEZMOI_GDM_MONITORS_PY
+{{ end }}
+{{ end }}
