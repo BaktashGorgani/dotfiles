@@ -60,3 +60,10 @@ alias lg='lazygit'
 
 # chezmoi update and refresh (package upgrades run automatically during apply)
 alias cur='chezmoi update --refresh-externals'
+
+if [[ "$OSTYPE" == linux* ]]; then
+    alias activity-watch-check='activity-watch --check'
+    alias activity-watch-pause='activity-watch --pause'
+    alias activity-watch-resume='activity-watch --resume'
+    alias activity-watch-delete='activity-watch --delete'
+fi

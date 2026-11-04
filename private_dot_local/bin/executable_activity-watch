@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Review, pause, resume, or reset local activity-watch tracking."""
+import argparse
+import glob
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+DATA_DIR = Path.home() / ".local" / "share" / "activity-watch"
+STATE_FILE = DATA_DIR / "last-checked.txt"
+WINDOW_SERVICE = "activity-watch-windows.service"
+HISTORY_SERVICE = "activity-watch-history.service"
+HISTORY_TIMER = "activity-watch-history.timer"
+COLLECTORS = (WINDOW_SERVICE, HISTORY_TIMER)
+
+
+def read_checkpoint():
+    if STATE_FILE.exists():
+        try:
+            return datetime.fromisoformat(STATE_FILE.read_text().strip())
+        except ValueError:
+            pass
+    return None
+
+
+def write_checkpoint(ts: datetime):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(ts.isoformat())
+
+
+def iter_alerts():
+    for f in sorted(glob.glob(str(DATA_DIR / "alerts" / "*.log"))):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                ts_str = line.split(" ", 1)[0]
+                try:
+                    ts = datetime.fromisoformat(ts_str)
+                except ValueError:
+                    continue
+                yield ts, line
+
+
+def iter_window_events():
+    for f in sorted(glob.glob(str(DATA_DIR / "window-logs" / "*.jsonl"))):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    ts = datetime.fromisoformat(entry["ts"])
+                except Exception:
+                    continue
+                yield ts, entry
+
+
+def check_history(mark_read=False):
+    now = datetime.now().astimezone()
+    checkpoint = read_checkpoint()
+
+    if checkpoint is None:
+        print("First check -- showing all recorded activity.\n")
+        checkpoint = datetime.min.replace(tzinfo=timezone.utc)
+    else:
+        print(f"Showing activity since last mark-read: {checkpoint.isoformat()}\n")
+
+    print("=== History-deletion alerts ===")
+    alerts = [line for ts, line in iter_alerts() if ts >= checkpoint]
+    if alerts:
+        for line in alerts:
+            print(line)
+    else:
+        print("(none)")
+
+    print()
+    print("=== Tab/window activity ===")
+    events = [(ts, e) for ts, e in iter_window_events() if ts >= checkpoint]
+    title_changes = [(ts, e) for ts, e in events if e.get("event") == "title_changed"]
+    if title_changes:
+        print(f"{len(title_changes)} tab title change(s) across {len(events)} total logged event(s):\n")
+        for ts, e in title_changes:
+            print(f"  {ts.strftime('%Y-%m-%d %H:%M:%S')}  {e.get('title', '')}")
+    else:
+        print("(none)")
+
+    print()
+    if mark_read:
+        write_checkpoint(now)
+        print(f"Checkpoint updated to {now.isoformat()}")
+    else:
+        print("(checkpoint not updated -- pass --mark-read to advance it)")
+
+
+def systemctl(*args):
+    return subprocess.run(
+        ["systemctl", "--user", *args],
+        check=True, capture_output=True, text=True,
+    )
+
+
+def pause_tracking():
+    systemctl("disable", "--now", *COLLECTORS)
+    systemctl("stop", HISTORY_SERVICE)
+    print("Tracking paused (including across reboots). Use --resume to restart.")
+
+
+def resume_tracking():
+    systemctl("enable", "--now", *COLLECTORS)
+    print("Tracking resumed.")
+
+
+def active_collectors():
+    active = []
+    for unit in COLLECTORS:
+        result = subprocess.run(
+            ["systemctl", "--user", "is-active", unit],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            active.append(unit)
+        elif result.returncode != 3:
+            raise RuntimeError(
+                f"Cannot determine state of {unit}: "
+                f"{result.stderr.strip() or result.stdout.strip()}"
+            )
+    return active
+
+
+def delete_history():
+    patterns = {
+        "alerts": "*.log",
+        "history-snapshots": "*.txt",
+        "window-logs": "*.jsonl",
+    }
+    for directory in (DATA_DIR, *(DATA_DIR / name for name in patterns)):
+        if directory.is_symlink():
+            raise RuntimeError(f"Refusing to delete through symlink: {directory}")
+
+    active = active_collectors()
+    removed = 0
+    try:
+        # Stop the timer first, and wait for any in-flight history check.
+        systemctl("stop", HISTORY_TIMER, WINDOW_SERVICE, HISTORY_SERVICE)
+        for name, pattern in patterns.items():
+            for path in (DATA_DIR / name).glob(pattern):
+                if path.is_file() or path.is_symlink():
+                    path.unlink()
+                    removed += 1
+        STATE_FILE.unlink(missing_ok=True)
+    finally:
+        if active:
+            systemctl("start", *active)
+    print(f"Deleted {removed} activity-watch log/snapshot files and reset the checkpoint.")
+    print("Chrome history was not changed. Previously running collectors restored.")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="activity-watch",
+        description="Manage local activity-watch tracking and recorded findings.",
+        allow_abbrev=False,
+    )
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument("--check", action="store_true", help="show findings since the last mark-read")
+    actions.add_argument("--pause", action="store_true", help="disable and stop tracking until resumed")
+    actions.add_argument("--resume", action="store_true", help="enable and start tracking")
+    actions.add_argument("--delete", action="store_true", help="delete activity-watch records and checkpoint (not Chrome history)")
+    parser.add_argument("--mark-read", action="store_true", help="advance the checkpoint after --check")
+    args = parser.parse_args(argv)
+    if args.mark_read and not args.check:
+        parser.error("--mark-read requires --check")
+    if not any((args.check, args.pause, args.resume, args.delete)):
+        parser.print_help()
+        return 0
+    try:
+        if args.check:
+            check_history(args.mark_read)
+        elif args.pause:
+            pause_tracking()
+        elif args.resume:
+            resume_tracking()
+        else:
+            delete_history()
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+        detail = error.stderr.strip() if isinstance(error, subprocess.CalledProcessError) and error.stderr else str(error)
+        print(f"activity-watch: {detail}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

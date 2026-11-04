@@ -14,5 +14,6 @@ tests
 .config/wlogout
 .config/systemd
 .config/mimeapps.list
+.local/bin/activity-watch
 .local/bin/activity-watch-*
 {{ end }}
