@@ -19,7 +19,7 @@ review these before applying on another machine.
   Waybar, Rofi, Dunst, hypridle/hyprlock, wlogout, clipboard services, wallpaper
   rotation, and Gammastep.
 - **System integration:** Linux user services, local browser activity logging,
-  Fedora boot-entry maintenance, and a Fedora GDM monitor layout.
+  Fedora release notifications, boot-entry maintenance, and a GDM monitor layout.
 
 ## Installation notes
 
@@ -64,19 +64,31 @@ Or to install on a machine that already has chezmoi installed:
 chezmoi init --apply BaktashGorgani
 ```
 
-Full DNF and Flatpak installation/update automation runs **only on Fedora with
-hostname `baky-fedora-pc`**. It enables the Hyprland/nwg-shell COPRs, RPM Fusion,
+Full DNF and Flatpak installation/update automation runs **on Fedora regardless
+of hostname**. It enables the Hyprland/nwg-shell COPRs, RPM Fusion,
 Google Chrome, and the additional repositories declared in the package inventory.
 Flatpak applications are installed explicitly from `flathub`; that remote must
 already be configured. Cisco Secure Client VPN, Webex, and Zoom require manual
 RPM installation; the installer only reports whether they are present.
 
-Other Linux hosts still receive shared Homebrew/Rust/pipx setup and Linux desktop
-files, and the user-unit setup script still runs. Install the required distro
+Non-Fedora Linux hosts still receive shared Homebrew/Rust/pipx setup and Linux
+desktop files, and the user-unit setup script still runs. Install the required distro
 packages and review the service list before applying there; this is not a complete
 generic Linux bootstrap. In particular, pipx maintenance expects
 `/usr/bin/python3` and `/usr/bin/pipx`. Fedora boot and GDM installers are gated
 by distribution, **not** by hostname.
+
+Fedora release notifications are enabled alongside the desktop setup.
+Their dependencies are declared explicitly; see
+[Fedora release notifications](#fedora-release-notifications).
+
+The hostname does not select a smaller Fedora profile: a new Fedora workstation
+receives the same managed files, package inventory, repositories, and user-unit
+setup as this PC. The checks use the Fedora distribution ID, not the installed
+desktop environment, so they also apply to Fedora spins. Review the monitor layout,
+NVIDIA configuration, local paths/assets, and manually installed tools before
+using this setup on different hardware; those are not auto-detected or cloned
+from the current PC.
 
 ## Configuration map
 
@@ -98,7 +110,8 @@ Chezmoi maps `dot_` to a leading `.`, `private_` to private permissions, and
 - `private_dot_config/` also contains Sway, Waybar, Rofi, Dunst, wlogout,
   rustfmt, and syncat configuration; `mimeapps.list` defines file/URL handlers.
 - `private_dot_config/systemd/user/` and `private_dot_local/bin/`: user units
-  and activity-watch helpers. `scripts/` contains tmux/SSH/scrollback helpers.
+  and activity-watch/release-check helpers. `scripts/` contains
+  tmux/SSH/scrollback helpers.
 - `.chezmoitemplates/`: shared maintenance helpers, the boot hook, and GDM XML.
   Root-level `run_*` scripts automate installation, upgrades, and setup.
 
@@ -117,7 +130,7 @@ rendered contents change); `run_update-packages.sh.tmpl` runs on every apply.
 The update workflow includes:
 
 - DNF upgrades, autoremove, and package-cache cleanup, plus Flatpak upgrades,
-  stale exact-runtime-pin cleanup, and unused-runtime removal on the Fedora host.
+  stale exact-runtime-pin cleanup, and unused-runtime removal on Fedora hosts.
 - Homebrew metadata refresh, upgrades, autoremove, and cache cleanup.
 - Repair and upgrade of the declared pipx tools (`git-filter-repo`, `isort`,
   and `mypy`), including broken launchers or environments left behind by Python
@@ -156,8 +169,11 @@ steps may already have completed.
 
 `hyprland.lua` loads `lua/settings.lua`, `lua/autostart.lua`, `lua/binds.lua`,
 and `lua/rules.lua`; shared application commands live in `lua/apps.lua`.
-The layout assumes `DP-1` on the left, scaled `DP-2` in the middle, and a rotated
-`HDMI-A-1` on the right, with workspaces 1–3 assigned to those outputs.
+The layout uses the HP display on `DP-2` at `0x0` on the left, the Samsung display
+on `DP-1` at `1920x0` in the middle (scale 1.25), and a rotated `HDMI-A-1` at
+`3968x0` on the right. Workspaces 1, 2, and 3 are assigned to those outputs,
+respectively. Dunst notifications stay on the center Samsung (`monitor = DP-1`,
+`follow = none`) rather than relying on an unstable monitor index.
 NVIDIA-specific environment variables and software cursors are enabled.
 Chrome, Warp, kitty, Discord, and a privileged btop task-manager window are
 started with the session.
@@ -172,6 +188,9 @@ Selected bindings (`Super` is the Windows key):
 - `Super+Ctrl+Escape`: privileged btop; `Super+Ctrl+L`: wlogout.
 - `Super+H/J/K/L` or arrows: focus; add Shift to move windows.
 - `Super+1/2/3` have monitor-specific behavior, not normal workspace selection.
+  `Super+1` swaps center/left workspaces; `Super+2` focuses the center;
+  `Super+3` swaps center/right; `Super+=` swaps right/left. `Super+Shift+1/2/3`
+  moves the active window to the left/center/right display.
   Use `Super+Ctrl+1/2/3` to bring those workspaces to the current monitor.
 - `Super+T/C/W/S/O`: toggle terminal/chats/work/floatingwindow/outoftheway
   special workspaces. See `lua/binds.lua` for the complete binding list.
@@ -218,6 +237,48 @@ activity-watch's records (not Chrome history). Linux Zsh aliases
 See [README-activity-watch.md](README-activity-watch.md) for implementation,
 log paths, service commands, and limitations.
 
+### Fedora release notifications
+
+On Fedora, a normal `chezmoi apply` installs the release-check dependencies
+(`bash`, `coreutils`, `curl`, `dunst`, `jq`, `libnotify`, `systemd`, `util-linux`,
+and `xdg-utils`) if missing, deploys `~/.local/bin/fedora-release-check` and its
+user service/timer, and enables `fedora-release-check.timer`. This feature is
+not hostname-gated. The helper and user units are excluded on macOS; the timer
+is not enabled on other Linux distributions.
+
+The timer checks around midnight local time (with up to five minutes of random
+delay), plus shortly after the user manager starts. `Persistent=true` catches up
+missed calendar runs. The service only runs in an active
+`graphical-session.target`; a working Dunst session and network are required.
+Fedora's official `releases.json` is compared with `/etc/os-release`, ignoring
+beta and Rawhide entries. The release list may lag a release announcement.
+No packages or release upgrades are downloaded or installed by the checker.
+
+When a newer stable release exists, Dunst shows a notification for 60 seconds.
+Left-click to open the existing action menu and select **Open upgrade guide**
+to open the [Fedora offline upgrade documentation](https://docs.fedoraproject.org/en-US/quick-docs/upgrading-fedora-offline/).
+The URL uses your configured HTTP/HTTPS handler (Junction in these dotfiles;
+it must be installed, or choose another installed handler). The opener runs in
+a separate transient user service so a browser chooser cannot block the checker.
+Other notifications and global Dunst mouse bindings are unchanged.
+
+Reminders for the same release are limited to once every seven days. State lives
+in `${XDG_STATE_HOME:-~/.local/state}/fedora-release-check/last-notified` and is
+not managed or copied by chezmoi. Failed network/notification requests do not
+advance that state; another attempt happens at the next scheduled check.
+
+Inspect or manually run the check with:
+
+```sh
+systemctl --user --no-pager list-timers fedora-release-check.timer
+systemctl --user start fedora-release-check.service
+journalctl --user -u fedora-release-check.service -b --no-pager
+```
+
+A manual check still honors the weekly reminder limit. To temporarily disable
+checks, run `systemctl --user disable --now fedora-release-check.timer`.
+The user-unit setup hook enables it again when that hook next runs.
+
 ## Fedora GDM monitor layout
 
 On Fedora with GDM installed, the run-onchange installer merges
@@ -226,6 +287,9 @@ On Fedora with GDM installed, the run-onchange installer merges
 so its seat-specific configuration directory exists.
 The layout matches the three-monitor desktop arrangement, but uses GDM/Mutter
 identities (notably `HDMI-1` rather than Hyprland's `HDMI-A-1`).
+The HP uses `DP-2` at `0x0`; the primary Samsung uses `DP-1` at `1920x0`.
+GDM uses scale 1 for the center display (unlike Hyprland's 1.25), so the rotated
+right display starts at `4480x0` instead of `3968x0`.
 Review the XML's monitor identities and modes before applying on other hardware.
 
 Unrelated monitor combinations are preserved. An existing file is backed up as
@@ -281,7 +345,9 @@ python3 -m unittest discover -s tests -v
 
 The isolated tests cover boot-entry archiving/backups/title logging and Python
 tool maintenance, including pipx repair, Linux/macOS template rendering, and
-Mason Jedi health/repair/error paths. Boot paths and package commands are redirected
+Mason Jedi health/repair/error paths, plus Fedora release detection, reminder
+suppression, notification actions, and fresh-host installation/platform guards.
+Boot paths and package commands are redirected
 to temporary fixtures/mocks rather than changing the real boot menu or installing
 packages. Template checks require chezmoi and Mason helper tests require Neovim;
 those tests are skipped if the corresponding executable is unavailable.
