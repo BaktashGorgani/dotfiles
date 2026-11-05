@@ -221,6 +221,73 @@ systemctl --user list-timers
 journalctl --user -u change-wallpaper.service -b
 ```
 
+### Cloud drive mounts
+
+Two optional rclone user services mount Google Drive at `~/Cloud/GoogleDrive`
+(`rclone-gdrive.service`) and OneDrive at `~/Cloud/OneDrive`
+(`rclone-onedrive.service`). Their definitions are managed under
+`private_dot_config/systemd/user/`; Fedora's package inventory includes `rclone`
+and `fuse3`. On other Linux distributions, install these dependencies separately.
+
+Account credentials are deliberately **not managed by chezmoi**. On each new PC,
+run `rclone config` and create remotes named exactly `gdrive` (Google Drive) and
+`onedrive` (Microsoft OneDrive). Keep the configuration at the path used by the
+units, `~/.config/rclone/rclone.conf`, and restrict its permissions:
+
+```sh
+rclone config
+chmod 600 ~/.config/rclone/rclone.conf
+```
+
+For Google Drive, create your own Desktop OAuth client following
+[rclone's client-ID instructions](https://rclone.org/drive/#making-your-own-client-id).
+Set the Google OAuth app to **In production** before authorizing to avoid
+Testing mode's seven-day refresh-token expiration. Google may require a homepage,
+privacy-policy URL, and authorized domain under Branding before publication.
+If already authorized in Testing, run `rclone config reconnect gdrive:` after
+publishing. For OneDrive, the default client credentials normally work; select
+the actual **OneDrive** drive, not an internal metadata/archive drive.
+See the [OneDrive configuration guide](https://rclone.org/onedrive/).
+
+Verify access before enabling each service:
+
+```sh
+rclone lsd gdrive:
+rclone lsd onedrive:
+systemctl --user daemon-reload
+systemctl --user enable --now rclone-gdrive.service rclone-onedrive.service
+```
+
+Run the enable/start command from an active graphical session; enable only the
+service for accounts you have configured. The general user-unit setup hook does
+not enable these optional mounts automatically. Mount directories are created
+by the services and must be empty before their first mount. Stop any manually
+started rclone mounts before starting the services to avoid duplicate mounts.
+
+Like the other custom desktop units, these services are wanted by
+`graphical-session.target` and stop when that target stops. The Hyprland session
+must activate that target, as it does on this PC; no extra Hyprland autostart
+command is needed. No `/etc/fstab` entry, lingering, or system-boot dependency is
+used. Failed starts time out after 45 seconds and retry after 15 seconds without
+blocking desktop startup.
+
+These are **read/write cloud mounts**, not offline mirrors or backups: edits and
+deletions affect the cloud account. Full VFS caching uses local disk space under
+`~/.cache/rclone`; writes may upload after an application closes the file. Allow
+uploads to finish before logging out, and do not delete the cache with pending
+uploads. Neither cached cloud data nor OAuth secrets/tokens should be added to
+this repository.
+
+Inspect status/logs or disable automatic mounting with:
+
+```sh
+systemctl --user status rclone-gdrive.service rclone-onedrive.service --no-pager
+journalctl --user -u rclone-gdrive.service -u rclone-onedrive.service -b --no-pager
+systemctl --user disable --now rclone-gdrive.service rclone-onedrive.service
+```
+
+Use systemd to stop the managed services rather than unmounting them manually.
+
 ### Activity logging
 
 The local activity-watch helpers log browser window/tab titles from Hyprland
