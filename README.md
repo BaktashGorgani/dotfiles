@@ -26,10 +26,50 @@ review these before applying on another machine.
 The initial apply requires the passphrase for `key.txt.age`. The before-script
 decrypts the age identity to `~/.config/chezmoi/key.txt` with mode `0600` if it is
 missing; chezmoi then uses it for the encrypted shell files and SSH helper.
+It also decrypts the restore-once rclone configuration backup when needed.
 The identity is not stored in plaintext in this repository.
 
 Applying these dotfiles also installs software and runs package upgrades; it is
 not just a configuration-file copy.
+
+### Encrypted credentials and recovery
+
+The existing age identity decrypts these managed credential files:
+
+- `private_dot_ssh/encrypted_private_id_rsa.age` restores `~/.ssh/id_rsa`.
+- `private_dot_ssh/encrypted_private_config.age` restores `~/.ssh/config`.
+- `dot_zsh_custom/encrypted_private_secrets.zsh.age` and
+  `encrypted_private_secret_aliases.zsh.age` restore the shell-secret files.
+- The encrypted rclone snapshot described below restores only when its config
+  is missing, so normal applies cannot roll back refreshed tokens.
+
+Private keys, SSH config, and shell-secret files restore with mode `0600`;
+`private_dot_ssh/` creates `~/.ssh/` with mode `0700`.
+The SSH public key is stored normally at `private_dot_ssh/id_rsa.pub` and restores
+with mode `0644`. Only the named SSH files are managed; `known_hosts` and unrelated
+SSH files are not included or purged.
+
+Unlike the restore-once rclone snapshot, SSH and shell-secret files are normal
+managed files: bring local changes back into chezmoi before applying, or an apply
+can restore the saved version. To refresh the encrypted SSH backup after changing
+its key or configuration, keep the live files at mode `0600` and run:
+
+```sh
+chezmoi add --encrypt ~/.ssh/id_rsa ~/.ssh/config
+chezmoi add ~/.ssh/id_rsa.pub
+```
+
+Backing up the SSH key does not change or remove its own passphrase. If it has
+one, you still need that SSH passphrase to use it after recovery. The separate
+passphrase for `key.txt.age` only unlocks the age identity backup. Changing that
+backup passphrase does not change the age keypair or require re-encrypting files.
+Keep the latest backup passphrase in a password manager outside this PC.
+
+Never commit the plaintext age identity, private SSH key, shell secrets, or live
+rclone config. Only their encrypted `.age` sources belong in Git; tools such as
+`chezmoi diff` or `chezmoi cat` can display decrypted secrets, so avoid sharing
+their output. Desktop keyrings and GitHub login storage are not included in these
+backups.
 
 ## macOS
 
@@ -103,6 +143,7 @@ Chezmoi maps `dot_` to a leading `.`, `private_` to private permissions, and
   period; Neovim has a one-day period.
 - `dot_zshrc` and `dot_zsh_custom/`: shell plugins, aliases, functions,
   keybindings, environment, and encrypted secrets.
+- `private_dot_ssh/`: encrypted private SSH key/config and the public key.
 - `dot_tmux.conf`, `dot_gitmux.conf`, `dot_gitconfig`, and
   `private_dot_config/kitty/`: terminal, multiplexer, and Git settings.
 - `private_dot_config/hypr/`: Hyprland entry point `hyprland.lua`, Lua modules
@@ -229,15 +270,38 @@ Two optional rclone user services mount Google Drive at `~/Cloud/GoogleDrive`
 `private_dot_config/systemd/user/`; Fedora's package inventory includes `rclone`
 and `fuse3`. On other Linux distributions, install these dependencies separately.
 
-Account credentials are deliberately **not managed by chezmoi**. On each new PC,
-run `rclone config` and create remotes named exactly `gdrive` (Google Drive) and
-`onedrive` (Microsoft OneDrive). Keep the configuration at the path used by the
-units, `~/.config/rclone/rclone.conf`, and restrict its permissions:
+The rclone configuration is backed up **only as an age-encrypted, restore-once
+snapshot** at `private_dot_config/rclone/create_encrypted_private_rclone.conf.age`.
+Chezmoi restores `~/.config/rclone/rclone.conf` with owner-only `0600` permissions
+if it is missing. The `create_` attribute leaves an existing config's contents
+untouched on later applies, so rclone's refreshed tokens and account changes are
+not rolled back. Restoring requires the age identity, recovered from
+`key.txt.age` using its passphrase during bootstrap if necessary.
+
+This is a recovery snapshot, not a guarantee that old tokens still work.
+On a new PC, verify access using the commands below. If authorization has expired
+or been revoked, use `rclone config reconnect gdrive:` or
+`rclone config reconnect onedrive:`. To set up accounts from scratch, run
+`rclone config` and create remotes named exactly `gdrive` (Google Drive) and
+`onedrive` (Microsoft OneDrive). Keep the config at the path used by the units
+and restrict its permissions:
 
 ```sh
 rclone config
 chmod 600 ~/.config/rclone/rclone.conf
 ```
+
+After reconnecting or changing accounts, deliberately refresh the encrypted
+snapshot from your working config:
+
+```sh
+chezmoi add --create --encrypt ~/.config/rclone/rclone.conf
+```
+
+Commit and push the encrypted `.age` source to make the refreshed backup
+available elsewhere. Never commit the live plaintext config or token values.
+Normal applies do not refresh the snapshot automatically. Do not remove a working
+config just to test restoration; tests use isolated dummy credentials instead.
 
 For Google Drive, create your own Desktop OAuth client following
 [rclone's client-ID instructions](https://rclone.org/drive/#making-your-own-client-id).
@@ -275,8 +339,8 @@ These are **read/write cloud mounts**, not offline mirrors or backups: edits and
 deletions affect the cloud account. Full VFS caching uses local disk space under
 `~/.cache/rclone`; writes may upload after an application closes the file. Allow
 uploads to finish before logging out, and do not delete the cache with pending
-uploads. Neither cached cloud data nor OAuth secrets/tokens should be added to
-this repository.
+uploads. Cached cloud data and plaintext OAuth secrets/tokens must not be added
+to this repository; credentials belong only in the encrypted snapshot above.
 
 Inspect status/logs or disable automatic mounting with:
 
@@ -420,6 +484,9 @@ The isolated tests cover boot-entry archiving/backups/title logging and Python
 tool maintenance, including pipx repair, Linux/macOS template rendering, and
 Mason Jedi health/repair/error paths, plus Fedora release detection, login/daily
 timer configuration, repeat notifications, actions, and fresh-host platform guards.
+Credential backup tests use temporary age keys and dummy credentials to check
+SSH/shell-secret restoration and private permissions, plus rclone restore-once
+behavior and snapshot refresh. Tests never restore real credentials to fixtures.
 Boot paths and package commands are redirected
 to temporary fixtures/mocks rather than changing the real boot menu or installing
 packages. Template checks require chezmoi and Mason helper tests require Neovim;
