@@ -34,7 +34,7 @@ function brew_shellenv() {
 log "\nBEGIN INSTALL SCRIPT\n"
 
 {{ if eq .chezmoi.os "linux" }}
-    {{ if (and (eq .chezmoi.hostname "baky-fedora-pc" ) (eq .chezmoi.osRelease.id "fedora")) }}
+    {{ if eq .chezmoi.osRelease.id "fedora" }}
         log "Enabling required COPR repos..."
 
         sudo dnf copr enable -y sdegler/hyprland
