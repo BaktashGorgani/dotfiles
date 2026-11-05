@@ -7,7 +7,7 @@
       <scale>1</scale>
       <monitor>
         <monitorspec>
-          <connector>DP-1</connector>
+          <connector>DP-2</connector>
           <vendor>HPN</vendor>
           <product>HP 24mh</product>
           <serial>3CM04715TD&#32;&#32;&#32;</serial>
@@ -22,11 +22,11 @@
     <logicalmonitor>
       <x>1920</x>
       <y>0</y>
-      <scale>1.25</scale>
+      <scale>1</scale>
       <primary>yes</primary>
       <monitor>
         <monitorspec>
-          <connector>DP-2</connector>
+          <connector>DP-1</connector>
           <vendor>SAM</vendor>
           <product>LS27AG55x</product>
           <serial>H1AK500000</serial>
@@ -39,7 +39,7 @@
       </monitor>
     </logicalmonitor>
     <logicalmonitor>
-      <x>3968</x>
+      <x>4480</x>
       <y>0</y>
       <scale>1</scale>
       <transform>

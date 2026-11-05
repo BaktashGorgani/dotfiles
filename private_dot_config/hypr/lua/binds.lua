@@ -114,13 +114,13 @@ hl.bind(mainMod .. " + SHIFT + j", hl.dsp.window.move({ direction = "down",  gro
 --
 -- Monitors: keys 1-3 and Equal juggle the per-monitor workspaces
 --
-hl.bind(mainMod .. " + 1",     hl.dsp.workspace.swap_monitors({ monitor1 = "DP-2", monitor2 = "DP-1" }))
-hl.bind(mainMod .. " + 2",     hl.dsp.focus({ monitor = "DP-2" }))
-hl.bind(mainMod .. " + 3",     hl.dsp.workspace.swap_monitors({ monitor1 = "DP-2", monitor2 = "HDMI-A-1" }))
-hl.bind(mainMod .. " + equal", hl.dsp.workspace.swap_monitors({ monitor1 = "HDMI-A-1", monitor2 = "DP-1" }))
+hl.bind(mainMod .. " + 1",     hl.dsp.workspace.swap_monitors({ monitor1 = "DP-1", monitor2 = "DP-2" }))
+hl.bind(mainMod .. " + 2",     hl.dsp.focus({ monitor = "DP-1" }))
+hl.bind(mainMod .. " + 3",     hl.dsp.workspace.swap_monitors({ monitor1 = "DP-1", monitor2 = "HDMI-A-1" }))
+hl.bind(mainMod .. " + equal", hl.dsp.workspace.swap_monitors({ monitor1 = "HDMI-A-1", monitor2 = "DP-2" }))
 
-hl.bind(mainMod .. " + SHIFT + 1", hl.dsp.window.move({ monitor = "DP-1" }))
-hl.bind(mainMod .. " + SHIFT + 2", hl.dsp.window.move({ monitor = "DP-2" }))
+hl.bind(mainMod .. " + SHIFT + 1", hl.dsp.window.move({ monitor = "DP-2" }))
+hl.bind(mainMod .. " + SHIFT + 2", hl.dsp.window.move({ monitor = "DP-1" }))
 hl.bind(mainMod .. " + SHIFT + 3", hl.dsp.window.move({ monitor = "HDMI-A-1" }))
 
 --
