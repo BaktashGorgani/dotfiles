@@ -461,3 +461,7 @@
     frame_color = "#3A4A6B03"
     icon = "$HOME/.config/dunst/icons/hyprdots.svg"
     timeout = 0
+
+[fedora-release-check]
+    appname = fedora-release-check
+    timeout = 60

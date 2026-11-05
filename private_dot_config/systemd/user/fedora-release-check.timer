@@ -1,0 +1,11 @@
+[Unit]
+Description=Check daily for a newer stable Fedora release
+
+[Timer]
+OnCalendar=daily
+OnStartupSec=2min
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

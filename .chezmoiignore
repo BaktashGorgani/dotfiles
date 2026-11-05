@@ -16,4 +16,5 @@ tests
 .config/mimeapps.list
 .local/bin/activity-watch
 .local/bin/activity-watch-*
+.local/bin/fedora-release-check
 {{ end }}

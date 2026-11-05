@@ -1,0 +1,9 @@
+[Unit]
+Description=Check for a newer stable Fedora release
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecCondition=/usr/bin/systemctl --user --quiet is-active graphical-session.target
+ExecStart=%h/.local/bin/fedora-release-check
+TimeoutStartSec=3min

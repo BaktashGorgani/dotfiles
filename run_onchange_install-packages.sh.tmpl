@@ -35,6 +35,14 @@ log "\nBEGIN INSTALL SCRIPT\n"
 
 {{ if eq .chezmoi.os "linux" }}
     {{ if eq .chezmoi.osRelease.id "fedora" }}
+        # Keep release-check prerequisites explicit rather than relying on
+        # incidental dependencies of the full desktop inventory.
+        if ! rpm -q {{ range .packages.fedora.release_check_dnfs }}{{ . | quote }} {{ end }} >/dev/null; then
+            log "Installing Fedora release notification dependencies..."
+            sudo dnf install -y {{ range .packages.fedora.release_check_dnfs }}{{ . | quote }} {{ end }}
+        fi
+    {{ end }}
+    {{ if eq .chezmoi.osRelease.id "fedora" }}
         log "Enabling required COPR repos..."
 
         sudo dnf copr enable -y sdegler/hyprland

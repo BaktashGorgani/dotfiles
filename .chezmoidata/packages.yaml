@@ -74,6 +74,17 @@ packages:
     - 'tmux-continuum'
     - 'tmux-floax'
   fedora:
+    # Release notifications are enabled on every Fedora host, not only home.
+    release_check_dnfs:
+      - 'bash'
+      - 'coreutils'
+      - 'curl'
+      - 'dunst'
+      - 'jq'
+      - 'libnotify'
+      - 'systemd'
+      - 'util-linux'
+      - 'xdg-utils'
     home:
       # Third-party repos required by entries in `dnfs`, written to
       # /etc/yum.repos.d/<id>.repo before the install transaction. dnf aborts

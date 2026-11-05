@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+. /etc/os-release
+[[ ${ID:-} == fedora && ${VERSION_ID:-} =~ ^[0-9]+$ ]] || exit 0
+
+latest=$(
+    curl --fail --silent --show-error --location --connect-timeout 10 --max-time 30 \
+        https://fedoraproject.org/releases.json |
+        jq -er '[.[].version | select(test("^[0-9]+$")) | tonumber] | max // error("No stable releases found")'
+)
+[[ $latest =~ ^[0-9]+$ ]] || exit 1
+(( latest > VERSION_ID )) || exit 0
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-release-check"
+mkdir -p "$state_dir"
+exec 9>"$state_dir/lock"
+flock -n 9 || exit 0
+
+now=$(date +%s)
+last_release=0
+last_time=0
+if [[ -f "$state_dir/last-notified" ]]; then
+    read -r last_release last_time < "$state_dir/last-notified" || true
+fi
+if [[ $last_release == "$latest" && $last_time =~ ^[0-9]+$ ]] &&
+    (( now >= last_time && now - last_time < 604800 )); then
+    exit 0
+fi
+
+# Wait for the chosen menu action or dismissal. The matching Dunst rule
+# bounds this notification to 60 seconds despite the global unlimited timeout.
+action=$(notify-send --app-name=fedora-release-check --urgency=normal \
+    --icon=system-software-update --expire-time=60000 \
+    --hint=string:x-dunst-stack-tag:fedora-release-check \
+    --action='default=Open upgrade guide' \
+    "Fedora $latest is available" \
+    "You’re running Fedora $VERSION_ID. Open the notification menu for the upgrade guide.")
+
+printf '%s %s\n' "$latest" "$now" > "$state_dir/last-notified.tmp"
+mv "$state_dir/last-notified.tmp" "$state_dir/last-notified"
+
+if [[ $action == default ]]; then
+    # Browser choosers can stay alive until their window closes. Give the
+    # opener its own user unit rather than holding up this daily oneshot.
+    systemd-run --user --collect --quiet --no-block \
+        /usr/bin/xdg-open \
+        https://docs.fedoraproject.org/en-US/quick-docs/upgrading-fedora-offline/
+fi
