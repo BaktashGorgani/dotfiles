@@ -1,3 +1,4 @@
+import configparser
 import json
 import os
 import shutil
@@ -73,16 +74,16 @@ class FedoraReleaseCheckTests(unittest.TestCase):
         ])
         self.assertEqual(self.state.read_text().split()[0], "45")
 
-    def test_dismissal_does_not_open_browser_and_repeat_is_suppressed(self):
+    def test_dismissal_does_not_open_browser_or_suppress_next_check(self):
         self.assert_success(self.run_check())
         self.assertFalse(self.opened.exists())
         calls = self.calls.read_text()
         self.assert_success(self.run_check())
-        self.assertEqual(self.calls.read_text(), calls)
+        self.assertEqual(self.calls.read_text(), calls + calls)
 
-    def test_week_old_notification_is_repeated(self):
+    def test_recent_notification_does_not_suppress_login_or_daily_checks(self):
         self.state.parent.mkdir(parents=True)
-        self.state.write_text(f"45 {int(time.time()) - 604801}\n")
+        self.state.write_text(f"45 {int(time.time())}\n")
         self.assert_success(self.run_check())
         self.assertTrue(self.calls.exists())
 
@@ -135,6 +136,20 @@ class FedoraReleaseCheckTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("chezmoi"), "chezmoi is required")
 class FedoraReleaseIntegrationTests(unittest.TestCase):
+    def test_timer_runs_after_each_graphical_login_and_daily(self):
+        timer = configparser.ConfigParser()
+        timer.read(ROOT / "private_dot_config/systemd/user/fedora-release-check.timer")
+        self.assertEqual(timer["Unit"]["PartOf"], "graphical-session.target")
+        self.assertEqual(timer["Install"]["WantedBy"], "graphical-session.target")
+        self.assertEqual(timer["Timer"]["OnActiveSec"], "30s")
+        self.assertEqual(timer["Timer"]["OnUnitActiveSec"], "1d")
+        self.assertEqual(timer["Timer"]["AccuracySec"], "1s")
+        for obsolete in ("OnCalendar", "OnStartupSec", "RandomizedDelaySec", "Persistent"):
+            self.assertNotIn(obsolete, timer["Timer"])
+        service = configparser.ConfigParser(interpolation=None)
+        service.read(ROOT / "private_dot_config/systemd/user/fedora-release-check.service")
+        self.assertEqual(service["Unit"]["PartOf"], "graphical-session.target")
+
     def render(self, filename, system, distro, hostname="fresh-pc"):
         source = (
             '{{ $_ := set .chezmoi "os" "' + system + '" }}\n'
@@ -195,7 +210,7 @@ class FedoraReleaseIntegrationTests(unittest.TestCase):
                 setup = self.render("run_onchange_after_setup-systemd-units.sh.tmpl", system, distro)
                 subprocess.run(["sh", "-n"], input=setup, text=True, check=True)
                 self.assertEqual(
-                    "enable --now fedora-release-check.timer" in setup, distro == "fedora"
+                    "reenable --now fedora-release-check.timer" in setup, distro == "fedora"
                 )
                 install = self.render("run_onchange_install-packages.sh.tmpl", system, distro)
                 self.assertEqual("sudo dnf install" in install, distro == "fedora")

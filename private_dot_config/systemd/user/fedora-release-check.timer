@@ -1,11 +1,11 @@
 [Unit]
-Description=Check daily for a newer stable Fedora release
+Description=Check for a newer stable Fedora release after login and daily
+PartOf=graphical-session.target
 
 [Timer]
-OnCalendar=daily
-OnStartupSec=2min
-RandomizedDelaySec=5min
-Persistent=true
+OnActiveSec=30s
+OnUnitActiveSec=1d
+AccuracySec=1s
 
 [Install]
-WantedBy=timers.target
+WantedBy=graphical-session.target

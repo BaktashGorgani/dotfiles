@@ -313,10 +313,13 @@ user service/timer, and enables `fedora-release-check.timer`. This feature is
 not hostname-gated. The helper and user units are excluded on macOS; the timer
 is not enabled on other Linux distributions.
 
-The timer checks around midnight local time (with up to five minutes of random
-delay), plus shortly after the user manager starts. `Persistent=true` catches up
-missed calendar runs. The service only runs in an active
-`graphical-session.target`; a working Dunst session and network are required.
+The timer checks about 30 seconds after each graphical login, then every 24 hours
+while the session stays active. It belongs to `graphical-session.target` and stops
+on logout; the next login starts a fresh schedule even if the user manager stays
+running. There is no midnight schedule or random delay. The service only runs in
+an active `graphical-session.target`; a working Dunst session and network are
+required. The setup hook recreates enablement links to migrate older
+`timers.target` installations automatically.
 Fedora's official `releases.json` is compared with `/etc/os-release`, ignoring
 beta and Rawhide entries. The release list may lag a release announcement.
 No packages or release upgrades are downloaded or installed by the checker.
@@ -329,10 +332,13 @@ it must be installed, or choose another installed handler). The opener runs in
 a separate transient user service so a browser chooser cannot block the checker.
 Other notifications and global Dunst mouse bindings are unchanged.
 
-Reminders for the same release are limited to once every seven days. State lives
-in `${XDG_STATE_HOME:-~/.local/state}/fedora-release-check/last-notified` and is
-not managed or copied by chezmoi. Failed network/notification requests do not
-advance that state; another attempt happens at the next scheduled check.
+Every check notifies if a newer stable release is available, including when the
+same release was announced earlier that day. There is no weekly suppression.
+The last successful notification is recorded for diagnostics in
+`${XDG_STATE_HOME:-~/.local/state}/fedora-release-check/last-notified`; that record
+does not control the schedule and is not managed or copied by chezmoi.
+Failed network/notification requests leave the record unchanged; another attempt
+happens at the next scheduled check.
 
 Inspect or manually run the check with:
 
@@ -342,8 +348,8 @@ systemctl --user start fedora-release-check.service
 journalctl --user -u fedora-release-check.service -b --no-pager
 ```
 
-A manual check still honors the weekly reminder limit. To temporarily disable
-checks, run `systemctl --user disable --now fedora-release-check.timer`.
+A manual check also notifies immediately if a newer release exists. To temporarily
+disable checks, run `systemctl --user disable --now fedora-release-check.timer`.
 The user-unit setup hook enables it again when that hook next runs.
 
 ## Fedora GDM monitor layout
@@ -412,8 +418,8 @@ python3 -m unittest discover -s tests -v
 
 The isolated tests cover boot-entry archiving/backups/title logging and Python
 tool maintenance, including pipx repair, Linux/macOS template rendering, and
-Mason Jedi health/repair/error paths, plus Fedora release detection, reminder
-suppression, notification actions, and fresh-host installation/platform guards.
+Mason Jedi health/repair/error paths, plus Fedora release detection, login/daily
+timer configuration, repeat notifications, actions, and fresh-host platform guards.
 Boot paths and package commands are redirected
 to temporary fixtures/mocks rather than changing the real boot menu or installing
 packages. Template checks require chezmoi and Mason helper tests require Neovim;

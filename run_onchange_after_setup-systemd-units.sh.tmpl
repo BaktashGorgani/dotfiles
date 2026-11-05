@@ -34,7 +34,8 @@ systemctl --user mask swaync.service
 systemctl --user mask hyprpolkitagent.service
 
 {{ if eq .chezmoi.osRelease.id "fedora" }}
-systemctl --user enable --now fedora-release-check.timer
+# Recreate enablement links to migrate older timers.target installations.
+systemctl --user reenable --now fedora-release-check.timer
 {{ end }}
 
 echo "systemd --user units enabled."
