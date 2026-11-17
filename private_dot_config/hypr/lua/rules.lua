@@ -118,6 +118,21 @@ hl.window_rule({ match = { class = "^(io.missioncenter.MissionCenter)$" },     f
 --
 -- Custom window rules
 --
+-- Keep SH4 windowed internally; use compositor fullscreen to avoid broken scaling.
+hl.window_rule({
+    name = "silent-hill-4-fullscreen",
+    match = { class = "^steam_app_1141086411$" },
+    fullscreen = true,
+})
+
+-- Older Amnesia builds do not reliably request fullscreen under XWayland.
+hl.window_rule({
+    name = "amnesia-display",
+    match = { class = "^Amnesia\\.bin\\.x86(_64)?$" },
+    fullscreen = true,
+    opacity = "1.0 override 1.0 override 1.0 override",
+})
+
 hl.window_rule({ match = { class = "^(discord)$" }, workspace = "special:chats silent" })
 hl.window_rule({ match = { class = "^(com.cisco.secureclient.gui)$" }, float = true })                            -- Cisco VPN
 hl.window_rule({ match = { class = "^(com.cisco.secureclient.gui)$" }, workspace = "special:outoftheway" })       -- Cisco VPN
