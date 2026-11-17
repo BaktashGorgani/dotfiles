@@ -56,6 +56,10 @@ fi
 # Publish the copy only after it succeeds, so a failed copy cannot become a backup.
 originals="$archive/originals"
 original="$originals/${keep##*/}"
+if [[ -L "$archive" || -L "$originals" ]]; then
+    printf 'Boot-entry cleanup skipped: archive directories must not be symlinks.\n' >&2
+    exit 1
+fi
 install -d -m 0700 "$archive" "$originals"
 if [[ -L "$original" || ( -e "$original" && ! -f "$original" ) ]]; then
     printf 'Boot-entry cleanup skipped: unexpected backup path %s.\n' "$original" >&2
@@ -93,4 +97,55 @@ for entry in "${files[@]}"; do
     fi
     mv -- "$entry" "$batch/"
     printf 'Archived boot entry: %s\n' "$batch/${entry##*/}"
+done
+
+# Prune only our own standard filenames in directories created by this hook.
+# Keep an entry if either image still exists (even a dangling image symlink).
+# Originals are first-seen backups, separate from the newest archived copy.
+declare -A seen=()
+prune_archive_entry() {
+    local entry=$1 deduplicate=$2 name version
+    [[ -f "$entry" && ! -L "$entry" ]] || return 0
+    name=${entry##*/}
+    [[ "$name" == "$machine_id-"*.conf ]] || return 0
+    version=${name#"$machine_id-"}
+    version=${version%.conf}
+    if [[ "$version" != 0-rescue ]]; then
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.fc[0-9]+\.[[:alnum:]_]+$ ]] || return 0
+        if [[ ! -e "/boot/vmlinuz-$version" && ! -L "/boot/vmlinuz-$version" &&
+              ! -e "/boot/initramfs-$version.img" && ! -L "/boot/initramfs-$version.img" ]]; then
+            rm -- "$entry"
+            printf 'Removed obsolete boot-entry backup: %s\n' "$entry"
+            return 0
+        fi
+    fi
+    if [[ "$deduplicate" == yes ]]; then
+        if [[ -n "${seen[$name]:-}" ]]; then
+            rm -- "$entry"
+            printf 'Removed duplicate boot-entry backup: %s\n' "$entry"
+        else
+            seen[$name]=1
+        fi
+    fi
+}
+
+# Glob order follows the UTC timestamp in batch names, not entry mtimes.
+# Process this invocation's batch first, including within the same second.
+batches=()
+for directory in "$archive/"*; do
+    [[ -d "$directory" && ! -L "$directory" ]] || continue
+    [[ "${directory##*/}" =~ ^[0-9]{8}T[0-9]{6}Z\.[[:alnum:]]{6}$ ]] || continue
+    [[ "$directory" != "$batch" ]] || continue
+    batches+=("$directory")
+done
+[[ -z "$batch" ]] || batches+=("$batch")
+for ((index=${#batches[@]}-1; index>=0; index--)); do
+    directory=${batches[index]}
+    for entry in "$directory/"*.conf; do
+        prune_archive_entry "$entry" yes
+    done
+    rmdir --ignore-fail-on-non-empty -- "$directory"
+done
+for entry in "$originals/"*.conf; do
+    prune_archive_entry "$entry" no
 done

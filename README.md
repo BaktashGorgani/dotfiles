@@ -460,6 +460,15 @@ or empty, or if its entry references unexpected images.
 When a title changes, the hook prints both its original and renamed title;
 unchanged titles do not produce rename messages.
 
+After successful archiving, the hook prunes backups for this machine's standard
+Fedora kernels only when both their kernel and initramfs images are gone.
+It retains first-seen originals while either image remains, and only the newest
+archived copy per filename, including one rescue entry. Empty timestamped batch
+directories are removed. Custom entries, other machines' entries, symlinks, and
+unrecognized directories are left untouched; symlinked archive roots are rejected.
+Pruning runs on add/refresh, not removal events, so backups made obsolete by a
+later kernel removal are cleaned on the next successful installation or refresh.
+
 Only the newest standard entry remains in the boot menu, even before its first
 successful boot. Archives are not bootable backups: package updates can still
 remove the old images they reference.

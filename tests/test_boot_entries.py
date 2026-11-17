@@ -48,6 +48,7 @@ class BootEntryTests(unittest.TestCase):
             "archive=/boot/loader/entries-archive", f'archive="{self.archive}"'
         )
         source = source.replace('"/boot$', f'"{self.boot}$')
+        source = source.replace('"/boot/', f'"{self.boot}/')
         source = source.replace(
             "export PATH=/usr/sbin:/usr/bin:/sbin:/bin",
             f'export PATH="{self.bin}:/usr/sbin:/usr/bin:/sbin:/bin"',
@@ -93,7 +94,7 @@ class BootEntryTests(unittest.TestCase):
         self.assertEqual((self.archive.stat().st_mode & 0o777), 0o700)
         self.assertIn(f"saved_entry={MACHINE}-{NEW}", (self.root / "grub-calls").read_text())
 
-    def test_repeated_runs_do_not_create_batches_or_overwrite_archives(self):
+    def test_repeated_runs_keep_only_latest_archived_copy(self):
         self.entry(OLD)
         self.entry(NEW)
         self.assert_success(self.run_hook())
@@ -103,9 +104,122 @@ class BootEntryTests(unittest.TestCase):
         self.assertEqual(len(list(self.archive.glob("[0-9]*"))), 1)
         self.entry(OLD).write_text(content + "# reinstalled\n")
         self.assert_success(self.run_hook(version=OLD))
-        self.assertEqual(len(list(self.archive.glob("[0-9]*"))), 2)
-        self.assertEqual(first.read_text(), content)
+        self.assertEqual(len(list(self.archive.glob("[0-9]*"))), 1)
+        archived = list(self.archive.glob("[0-9]*/*.conf"))
+        self.assertEqual(len(archived), 1)
+        self.assertEqual(archived[0].read_text(), content + "# reinstalled\n")
         self.assertTrue((self.entries / f"{MACHINE}-{NEW}.conf").exists())
+
+    def test_obsolete_archives_and_originals_are_pruned_after_images_disappear(self):
+        old = self.entry(OLD)
+        self.assert_success(self.run_hook(version=OLD))
+        self.entry(NEW)
+        self.assert_success(self.run_hook())
+        backup = self.archive / "originals" / old.name
+        self.assertTrue(backup.exists())
+        (self.boot / f"vmlinuz-{OLD}").unlink()
+        (self.boot / f"initramfs-{OLD}.img").unlink()
+        result = self.run_hook("refresh")
+        self.assert_success(result)
+        self.assertFalse(backup.exists())
+        self.assertFalse(list(self.archive.glob("[0-9]*")))
+        self.assertIn("Removed obsolete boot-entry backup:", result.stdout)
+        self.assertTrue((self.archive / "originals" / f"{MACHINE}-{NEW}.conf").exists())
+
+    def test_either_image_or_dangling_image_symlink_preserves_backups(self):
+        old = self.entry(OLD)
+        self.assert_success(self.run_hook(version=OLD))
+        self.entry(NEW)
+        self.assert_success(self.run_hook())
+        kernel = self.boot / f"vmlinuz-{OLD}"
+        initrd = self.boot / f"initramfs-{OLD}.img"
+        for survivor in ("kernel", "initrd", "symlink"):
+            with self.subTest(survivor=survivor):
+                kernel.unlink(missing_ok=True)
+                initrd.unlink(missing_ok=True)
+                if survivor == "kernel":
+                    kernel.write_text("kernel")
+                elif survivor == "initrd":
+                    initrd.write_text("initrd")
+                else:
+                    kernel.symlink_to(self.root / "missing-image")
+                self.assert_success(self.run_hook("refresh"))
+                self.assertEqual(len(list(self.archive.glob(f"[0-9]*/{old.name}"))), 1)
+                self.assertTrue((self.archive / "originals" / old.name).exists())
+
+    def test_rescue_deduplication_uses_batch_timestamp_not_file_mtime(self):
+        self.entry(NEW)
+        for stamp in ("20260101T000000Z.aaaaaa", "20260102T000000Z.bbbbbb"):
+            directory = self.archive / stamp
+            directory.mkdir(parents=True)
+            entry = directory / f"{MACHINE}-0-rescue.conf"
+            entry.write_text(stamp)
+            os.utime(entry, (1, 1) if "0102" in stamp else (100, 100))
+        self.assert_success(self.run_hook("refresh"))
+        copies = list(self.archive.glob("[0-9]*/*.conf"))
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(copies[0].read_text(), "20260102T000000Z.bbbbbb")
+        self.entry("0-rescue").write_text("latest rescue")
+        self.assert_success(self.run_hook())
+        copies = list(self.archive.glob("[0-9]*/*.conf"))
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(copies[0].read_text(), "latest rescue")
+
+    def test_cleanup_preserves_foreign_custom_symlink_and_unknown_paths(self):
+        self.entry(NEW)
+        directory = self.archive / "20260101T000000Z.aaaaaa"
+        directory.mkdir(parents=True)
+        target = self.root / "external"
+        target.mkdir()
+        external = target / f"{MACHINE}-{OLD}.conf"
+        external.write_text("untouched")
+        (self.archive / "20260102T000000Z.bbbbbb").symlink_to(target)
+        protected = [
+            directory / f"{'b' * 32}-{OLD}.conf",
+            directory / f"{MACHINE}-{OLD}+debug.conf",
+            directory / "notes",
+        ]
+        for entry in protected:
+            entry.write_text("untouched")
+        link = directory / f"{MACHINE}-{OLD}.conf"
+        link.symlink_to(external)
+        unknown = self.archive / "manual-backup"
+        unknown.mkdir()
+        (unknown / external.name).write_text("untouched")
+        originals = self.archive / "originals"
+        originals.mkdir()
+        original_link = originals / external.name
+        original_link.symlink_to(external)
+        self.assert_success(self.run_hook("refresh"))
+        for entry in [*protected, external, unknown / external.name]:
+            self.assertEqual(entry.read_text(), "untouched")
+        self.assertTrue(link.is_symlink())
+        self.assertTrue(original_link.is_symlink())
+        self.assertTrue((self.archive / "20260102T000000Z.bbbbbb").is_symlink())
+
+    def test_symlinked_archive_roots_abort_before_boot_changes(self):
+        new = self.entry(NEW)
+        original = new.read_text()
+        external = self.root / "external"
+        external.mkdir()
+        for path in (self.archive, self.archive / "originals"):
+            with self.subTest(path=path):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.symlink_to(external)
+                self.assertNotEqual(self.run_hook().returncode, 0)
+                self.assertEqual(new.read_text(), original)
+                self.assertEqual(list(external.iterdir()), [])
+                self.assertFalse((self.root / "grub-calls").exists())
+                path.unlink()
+
+    def test_failed_default_update_does_not_prune_existing_archives(self):
+        self.entry(NEW)
+        directory = self.archive / "20260101T000000Z.aaaaaa"
+        directory.mkdir(parents=True)
+        stale = directory / f"{MACHINE}-{OLD}.conf"
+        stale.write_text("preserve on failure")
+        self.assertNotEqual(self.run_hook(FAIL_GRUB="1").returncode, 0)
+        self.assertEqual(stale.read_text(), "preserve on failure")
 
     def test_reports_original_and_renamed_titles(self):
         self.entry(NEW)
